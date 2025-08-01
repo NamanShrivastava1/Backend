@@ -10,15 +10,28 @@ const cafeRoutes = require("./routes/cafe.routes")
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
+const allowedOrigins = ["http://localhost:8080", "https://scan-dine.vercel.app"];
+
 app.use(cors({
-  origin: "https://scan-dine.vercel.app",
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
 }));
 
 app.options("*", cors({
-  origin: "https://scan-dine.vercel.app",
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
 }));
+
 
 app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
 app.use("/api/users", userRoutes)
