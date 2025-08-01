@@ -6,7 +6,6 @@ const cors = require("cors");
 const path = require("path");
 const userRoutes = require("./routes/user.routes");
 const cafeRoutes = require("./routes/cafe.routes");
-const path = require("path");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
