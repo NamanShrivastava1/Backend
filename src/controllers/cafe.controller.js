@@ -223,7 +223,7 @@ module.exports.generateQRCode = async (req, res) => {
         }
 
         if (!cafe.qrCode) {
-            const qrURL = `https://menuqr.site/api/dashboard/menu/${cafe._id}`;
+            const qrURL = `https://scan-dine.vercel.app/menu/${cafe._id}`;
             const qrImage = await QRCode.toDataURL(qrURL);
             cafe.qrCode = qrImage;
             await cafe.save();
