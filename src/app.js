@@ -20,4 +20,8 @@ app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
 app.use("/api/users", userRoutes)
 app.use("/api/dashboard", cafeRoutes)
 
+app.get("/", (req, res) => {
+  res.send("Welcome to the ScanDine")
+})
+
 module.exports = app
