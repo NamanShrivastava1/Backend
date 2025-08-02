@@ -13,20 +13,23 @@ app.use(cookieParser());
 
 const allowedOrigins = [
   "http://localhost:8080",
-  "https://scan-dine.vercel.app"
+  "https://scan-dine.vercel.app",
+  "https://www.scan-dine.vercel.app"
 ];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error("Not allowed by CORS"));
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile app or curl)
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      console.log("Blocked by CORS:", origin); // helpful log
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
 
 app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
 app.use("/api/users", userRoutes);
