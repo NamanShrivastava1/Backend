@@ -1,12 +1,18 @@
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/user.model');
 const cafeModel = require('../models/cafe.model');
+const blacklistTokenModel = require('../models/blacklistToken.model');
 
 module.exports.authenticateCafe = async (req, res, next) => {
     try {
         const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
         if (!token) {
             return res.status(401).json({ message: "Authentication token is missing" });
+        }
+
+        const isBlacklisted = await blacklistTokenModel.findOne({ token });
+        if (isBlacklisted) {
+            return res.status(401).json({ message: "Session expired. Please log in again." });
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);

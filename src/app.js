@@ -11,11 +11,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-const allowedOrigins = ["http://localhost:8080", "https://scan-dine.vercel.app"];
+const allowedOrigins = [
+  "http://localhost:8080",
+  "https://scan-dine.vercel.app"
+];
 
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     return callback(new Error("Not allowed by CORS"));

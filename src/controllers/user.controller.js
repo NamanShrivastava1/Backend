@@ -145,13 +145,23 @@ exports.getCurrentUser = (req, res) => {
 
 
 module.exports.logoutUser = async (req, res) => {
-    res.clearCookie("token");
-    const token = req.cookies.token || req.headers.authorization.split(" ")[1];
+    const token = req.cookies.token || (req.headers.authorization?.split(" ")[1]);
+
+    if (!token) {
+        return res.status(400).json({ message: "Token not found" });
+    }
 
     await blackListTokenModel.create({ token });
 
+    res.clearCookie("token", {
+        httpOnly: true,
+        sameSite: "None",
+        secure: true
+    });
+
     res.status(200).json({ message: "Logged out successfully" });
-}
+};
+
 
 module.exports.deleteUser = async (req, res) => {
     try {
