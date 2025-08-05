@@ -129,7 +129,7 @@ module.exports.getUserProfile = async (req, res) => {
     }
 }
 
-exports.getCurrentUser = (req, res) => {
+module.exports.getCurrentUser = (req, res) => {
     try {
         const user = req.user;
         if (!user) {
