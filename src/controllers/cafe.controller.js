@@ -3,6 +3,8 @@ const menuModel = require('../models/menu.model');
 const { validationResult } = require('express-validator');
 const QRCode = require("qrcode");
 const categoryImageMap = require('../utils/categoryImages');
+const { sendMail } = require('../utils/email');
+const { cafeCreatedTemplate } = require('../utils/emailTemplates');
 module.exports.cafeInfo = async (req, res) => {
     try {
         const error = validationResult(req);
@@ -28,6 +30,12 @@ module.exports.cafeInfo = async (req, res) => {
             description,
             user: req.user._id
         })
+
+        await sendMail(
+            req.user.email,
+            "Thank you for registering your cafe with ScanDine",
+            cafeCreatedTemplate(req.user.fullname, cafename)
+        );
 
         res.status(201).json({
             message: "Cafe information added successfully",
