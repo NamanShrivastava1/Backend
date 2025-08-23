@@ -58,7 +58,7 @@ const cafeCreatedTemplate = (userName, cafeName) => {
         </p>
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="https://scan-dine.vercel.app/" target="_blank"
+          <a href="https://scan-dine.vercel.app/dashboard" target="_blank"
              style="background-color: #ff6600; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 15px;">
              Go to Dashboard
           </a>
