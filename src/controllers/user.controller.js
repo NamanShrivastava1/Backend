@@ -59,8 +59,10 @@ module.exports.registerUser = async (req, res) => {
         );
 
         res.status(201).json({
-            message: "User registered successfully",
-            user
+            success: true,
+            message: "User registered successfully. Please verify your email using the OTP sent.",
+            user,
+            userId: user._id // send userId for OTP verification
         })
 
     } catch (error) {
