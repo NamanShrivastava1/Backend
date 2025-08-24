@@ -53,7 +53,7 @@ router.get("/public-cafes", cafeController.publicCafeController)
 
 router.get("/public-menu/:cafeId", cafeController.publicMenuController);
 
-router.put("/menu/:id/toggle-availability", menuController.toggleAvailability);
+router.put("/menu/:id/toggle-availability", cafeController.toggleAvailability);
 
 
 
