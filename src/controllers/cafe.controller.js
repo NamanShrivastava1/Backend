@@ -299,7 +299,7 @@ module.exports.publicMenuController = async (req, res) => {
     try {
         const { cafeId } = req.params;
 
-        const menuItems = await menuModel.find({ cafe: cafeId }).select("dishName description price image category isChefSpecial");
+        const menuItems = await menuModel.find({ cafe: cafeId, isAvailable: true }).select("dishName description price image category isChefSpecial");
 
         if (!menuItems || menuItems.length === 0) {
             return res.status(404).json({ message: "No menu items found for this cafe" });
@@ -322,6 +322,28 @@ module.exports.publicMenuController = async (req, res) => {
         res.status(200).json({ categories });
     } catch (error) {
         console.error("Error fetching public menu:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+module.exports.toggleAvailability = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const menuItem = await menuModel.findById(id);
+
+        if (!menuItem) {
+            return res.status(404).json({ message: "Menu item not found" });
+        }
+
+        menuItem.isAvailable = !menuItem.isAvailable;
+        await menuItem.save();
+
+        res.status(200).json({ 
+            message: "Availability updated successfully", 
+            isAvailable: menuItem.isAvailable 
+        });
+    } catch (error) {
+        console.error("Error updating availability:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };
