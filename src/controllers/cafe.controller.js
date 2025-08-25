@@ -299,10 +299,12 @@ module.exports.publicMenuController = async (req, res) => {
     try {
         const { cafeId } = req.params;
 
-        const menuItems = await menuModel.find({ cafe: cafeId, isAvailable: true }).select("dishName description price image category isChefSpecial");
+        const menuItems = await menuModel
+            .find({ cafe: cafeId, isAvailable: true })
+            .select("dishName description price image category isChefSpecial");
 
         if (!menuItems || menuItems.length === 0) {
-            return res.status(404).json({ message: "No menu items found for this cafe" });
+            return res.status(200).json({ categories: [] });
         }
 
         // Group items by category
@@ -326,6 +328,7 @@ module.exports.publicMenuController = async (req, res) => {
     }
 };
 
+
 module.exports.toggleAvailability = async (req, res) => {
     try {
         const { id } = req.params;
@@ -338,9 +341,9 @@ module.exports.toggleAvailability = async (req, res) => {
         menuItem.isAvailable = !menuItem.isAvailable;
         await menuItem.save();
 
-        res.status(200).json({ 
-            message: "Availability updated successfully", 
-            isAvailable: menuItem.isAvailable 
+        res.status(200).json({
+            message: "Availability updated successfully",
+            isAvailable: menuItem.isAvailable
         });
     } catch (error) {
         console.error("Error updating availability:", error);
