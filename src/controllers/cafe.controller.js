@@ -343,6 +343,7 @@ module.exports.toggleAvailability = async (req, res) => {
 
         res.status(200).json({
             message: "Availability updated successfully",
+            menuItemId : menuItem._id,
             isAvailable: menuItem.isAvailable
         });
     } catch (error) {
