@@ -19,10 +19,6 @@ const menuSchema = new mongoose.Schema({
         type: String,
         trim: true,
     },
-    price: {
-        type: Number,
-        required: true,
-    },
     isChefSpecial: {
         type: Boolean,
         default: false,
@@ -31,9 +27,15 @@ const menuSchema = new mongoose.Schema({
         type: String,
         default: "No Image Available",
     },
-    isAvailable: { 
-        type: Boolean, 
-        default: true 
+    halfPrice: {
+        type: Number
+    },
+    fullPrice: {
+        type: Number
+    },
+    isAvailable: {
+        type: Boolean,
+        default: true
     },
     cafe: {
         type: mongoose.Schema.Types.ObjectId,

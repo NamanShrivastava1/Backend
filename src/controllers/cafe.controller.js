@@ -75,41 +75,52 @@ module.exports.addMenuItems = async (req, res) => {
         if (!error.isEmpty()) {
             return res.status(400).json({
                 errors: error.array(),
-                message: "Validation failed"
+                message: "Validation failed",
             });
         }
-        const { dishName, price, category, description } = req.body;
 
-        if (!dishName || !price || !category) {
+        const { dishName, halfPrice, fullPrice, category, description } = req.body;
+
+        if (!dishName || !category) {
             return res.status(400).json({
-                message: "All fields are required"
+                message: "Dish name and category are required",
             });
         }
 
-        const image = (typeof categoryImageMap !== "undefined" && categoryImageMap[category]) || "No Image Available";
+        if (!halfPrice && !fullPrice) {
+            return res.status(400).json({
+                message: "At least one price (half or full) is required",
+            });
+        }
 
+        const image =
+            (typeof categoryImageMap !== "undefined" &&
+                categoryImageMap[category]) ||
+            "No Image Available";
 
         const menu = await menuModel.create({
             dishName,
-            price,
+            halfPrice: halfPrice || undefined,
+            fullPrice: fullPrice || undefined,
             category,
             description,
             image,
             isChefSpecial: req.body.isChefSpecial || false,
-            cafe: req.cafe._id
-        })
+            cafe: req.cafe._id,
+        });
 
         res.status(201).json({
             message: "Menu item added successfully",
-            menu
+            menu,
         });
     } catch (error) {
         res.status(500).json({
             message: "Internal server error",
-            error: error.message
+            error: error.message,
         });
     }
-}
+};
+
 
 module.exports.getMenuItemsByCafe = async (req, res) => {
     try {
@@ -137,32 +148,28 @@ module.exports.updateMenuItem = async (req, res) => {
             });
         }
 
-        // ✅ Destructure all possible fields from body
         const {
             dishName,
-            price,
+            halfPrice,
+            fullPrice,
             category,
             description,
             isChefSpecial,
         } = req.body;
 
-        // ✅ Prepare update object dynamically (excluding undefined)
         const updateFields = {};
         if (dishName !== undefined) updateFields.dishName = dishName;
-        if (price !== undefined) updateFields.price = price;
+        if (halfPrice !== undefined) updateFields.halfPrice = halfPrice;
+        if (fullPrice !== undefined) updateFields.fullPrice = fullPrice;
         if (category !== undefined) updateFields.category = category;
         if (description !== undefined) updateFields.description = description;
         if (isChefSpecial !== undefined) updateFields.isChefSpecial = isChefSpecial;
 
-        // ✅ Ensure at least one field is present
         if (Object.keys(updateFields).length === 0) {
             return res.status(400).json({
                 message: "At least one field is required to update",
             });
         }
-
-        // ✅ Debug log
-        console.log("🔧 Updating Menu Item:", menuItemId, updateFields);
 
         const updateMenu = await menuModel.findByIdAndUpdate(
             menuItemId,
@@ -188,6 +195,7 @@ module.exports.updateMenuItem = async (req, res) => {
         });
     }
 };
+
 
 
 module.exports.deleteMenuItem = async (req, res) => {
@@ -343,7 +351,7 @@ module.exports.toggleAvailability = async (req, res) => {
 
         res.status(200).json({
             message: "Availability updated successfully",
-            menuItemId : menuItem._id,
+            menuItemId: menuItem._id,
             isAvailable: menuItem.isAvailable
         });
     } catch (error) {
