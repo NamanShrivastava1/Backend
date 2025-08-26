@@ -81,15 +81,9 @@ module.exports.addMenuItems = async (req, res) => {
 
         const { dishName, halfPrice, fullPrice, category, description } = req.body;
 
-        if (!dishName || !category) {
+        if (!dishName || !category || (!halfPrice && !fullPrice)) {
             return res.status(400).json({
-                message: "Dish name and category are required",
-            });
-        }
-
-        if (!halfPrice && !fullPrice) {
-            return res.status(400).json({
-                message: "At least one price (half or full) is required",
+                message: "Dish name, category, and at least one price (half or full) are required",
             });
         }
 
@@ -309,7 +303,9 @@ module.exports.publicMenuController = async (req, res) => {
 
         const menuItems = await menuModel
             .find({ cafe: cafeId, isAvailable: true })
-            .select("dishName description price image category isChefSpecial");
+            .select(
+                "dishName description price halfPrice fullPrice image category isChefSpecial"
+            );
 
         if (!menuItems || menuItems.length === 0) {
             return res.status(200).json({ categories: [] });
