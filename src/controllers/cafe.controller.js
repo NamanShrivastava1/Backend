@@ -5,6 +5,7 @@ const QRCode = require("qrcode");
 const categoryImageMap = require('../utils/categoryImages');
 const { sendMail } = require('../utils/email');
 const { cafeCreatedTemplate } = require('../utils/emailTemplates');
+const redisClient = require('../utils/redis');
 module.exports.cafeInfo = async (req, res) => {
     try {
         const error = validationResult(req);
@@ -103,18 +104,22 @@ module.exports.addMenuItems = async (req, res) => {
             cafe: req.cafe._id,
         });
 
+        // ✅ Invalidate Redis cache for this cafe’s menu
+        const cacheKey = `public:menu:${req.cafe._id}`;
+        await redisClient.del(cacheKey);
+
         res.status(201).json({
             message: "Menu item added successfully",
             menu,
         });
     } catch (error) {
+        console.error("Error adding menu item:", error);
         res.status(500).json({
             message: "Internal server error",
             error: error.message,
         });
     }
 };
-
 
 module.exports.getMenuItemsByCafe = async (req, res) => {
     try {
@@ -165,21 +170,25 @@ module.exports.updateMenuItem = async (req, res) => {
             });
         }
 
-        const updateMenu = await menuModel.findByIdAndUpdate(
+        const updatedMenu = await menuModel.findByIdAndUpdate(
             menuItemId,
             updateFields,
             { new: true }
         );
 
-        if (!updateMenu) {
+        if (!updatedMenu) {
             return res.status(404).json({
                 message: "Menu item not found",
             });
         }
 
+        // ✅ Invalidate Redis cache for this cafe’s menu
+        const cacheKey = `public:menu:${updatedMenu.cafe}`;
+        await redisClient.del(cacheKey);
+
         res.status(200).json({
             message: "Menu item updated successfully",
-            menu: updateMenu,
+            menu: updatedMenu,
         });
     } catch (error) {
         console.error("❌ Error in updateMenuItem:", error);
@@ -189,7 +198,6 @@ module.exports.updateMenuItem = async (req, res) => {
         });
     }
 };
-
 
 
 module.exports.deleteMenuItem = async (req, res) => {
@@ -272,9 +280,17 @@ module.exports.getMyMenuItems = async (req, res) => {
 // Public cafe routes
 module.exports.publicCafeController = async (req, res) => {
     try {
+        // 1️⃣ Try cache first
+        const cachedCafes = await redisClient.get("public:cafes");
+        if (cachedCafes) {
+            console.log("⚡ Serving cafes from Redis cache");
+            return res.status(200).json(JSON.parse(cachedCafes));
+        }
+
+        // 2️⃣ Fetch from MongoDB
         const cafes = await cafeModel.find();
 
-        // For each cafe, check if it has any Chef Special menu item
+        // 3️⃣ Add `hasChefSpecial` flag
         const cafesWithSpecialFlag = await Promise.all(
             cafes.map(async (cafe) => {
                 const hasChefSpecial = await menuModel.exists({
@@ -284,15 +300,21 @@ module.exports.publicCafeController = async (req, res) => {
 
                 return {
                     ...cafe.toObject(),
-                    hasChefSpecial: !!hasChefSpecial,
+                    hasChefSpecial: Boolean(hasChefSpecial),
                 };
             })
         );
 
-        res.status(200).json({ cafes: cafesWithSpecialFlag });
+        const response = { cafes: cafesWithSpecialFlag };
+
+        // 4️⃣ Store in Redis (5 minutes = 300s)
+        await redisClient.setEx("public:cafes", 300, JSON.stringify(response));
+        console.log("🗄️ Cached cafes in Redis");
+
+        return res.status(200).json(response);
     } catch (error) {
-        console.error("Error fetching public cafes:", error);
-        res.status(500).json({ message: "Internal server error" });
+        console.error("❌ Error fetching public cafes:", error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
 
@@ -301,34 +323,49 @@ module.exports.publicMenuController = async (req, res) => {
     try {
         const { cafeId } = req.params;
 
-        const menuItems = await menuModel
-            .find({ cafe: cafeId, isAvailable: true })
-            .select(
-                "dishName description price halfPrice fullPrice image category isChefSpecial"
-            );
-
-        if (!menuItems || menuItems.length === 0) {
-            return res.status(200).json({ categories: [] });
+        // 1️⃣ Check cache
+        const cacheKey = `public:menu:${cafeId}`;
+        const cachedMenu = await redisClient.get(cacheKey);
+        if (cachedMenu) {
+            console.log(`⚡ Serving menu for cafe ${cafeId} from Redis`);
+            return res.status(200).json(JSON.parse(cachedMenu));
         }
 
-        // Group items by category
+        // 2️⃣ Fetch from DB
+        const menuItems = await menuModel
+            .find({ cafe: cafeId, isAvailable: true })
+            .select("dishName description price halfPrice fullPrice image category isChefSpecial");
+
+        if (!menuItems || menuItems.length === 0) {
+            const emptyResponse = { categories: [] };
+            await redisClient.setEx(cacheKey, 60, JSON.stringify(emptyResponse));
+            return res.status(200).json(emptyResponse);
+        }
+
+        // 3️⃣ Group items by category
         const categoriesMap = {};
-        menuItems.forEach((item) => {
+        for (const item of menuItems) {
             if (!categoriesMap[item.category]) {
                 categoriesMap[item.category] = [];
             }
             categoriesMap[item.category].push(item);
-        });
+        }
 
         const categories = Object.entries(categoriesMap).map(([category, items]) => ({
             category,
             items,
         }));
 
-        res.status(200).json({ categories });
+        const response = { categories };
+
+        // 4️⃣ Cache for 60s
+        await redisClient.setEx(cacheKey, 60, JSON.stringify(response));
+        console.log(`🗄️ Cached menu for cafe ${cafeId}`);
+
+        return res.status(200).json(response);
     } catch (error) {
-        console.error("Error fetching public menu:", error);
-        res.status(500).json({ message: "Internal server error" });
+        console.error("❌ Error fetching public menu:", error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
 

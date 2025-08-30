@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 
+const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const path = require("path");
@@ -36,6 +37,21 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   next();
 })
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per window
+  message: { error: "Too many requests, please try again later." },
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 5, // max 5 login attempts
+  message: { error: "Too many login attempts, please try again later." },
+});
+
+app.use("/api/", apiLimiter);
+app.use("/api/users/login", loginLimiter);
 
 app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
 app.use("/api/users", userRoutes);
