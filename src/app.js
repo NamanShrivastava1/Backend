@@ -1,6 +1,9 @@
 const express = require("express");
 const app = express();
 
+// Trust proxy for rate limiting & correct IP detection
+app.set("trust proxy", 1);
+
 const rateLimit = require("express-rate-limit");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -24,7 +27,7 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      console.log("Blocked by CORS:", origin); // helpful log
+      console.log("Blocked by CORS:", origin);
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,

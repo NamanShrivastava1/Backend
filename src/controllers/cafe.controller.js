@@ -382,6 +382,11 @@ module.exports.toggleAvailability = async (req, res) => {
         menuItem.isAvailable = !menuItem.isAvailable;
         await menuItem.save();
 
+        // 🔴 Invalidate Redis cache for this cafe's menu
+        // assuming you store menus with key like `menu:${cafeId}`
+        const cacheKey = `public:menu:${menuItem.cafe}`;
+        await redisClient.del(cacheKey);
+
         res.status(200).json({
             message: "Availability updated successfully",
             menuItemId: menuItem._id,
