@@ -6,7 +6,7 @@ import categoryImageMap from "../utils/categoryImages.js";
 import { sendMail } from "../services/email.service.js";
 import { cafeCreatedTemplate } from "../utils/emailTemplates.js";
 
-export const cafeInfo = async (req, res) => {
+export const createCafe = async (req, res) => {
     try {
         const error = validationResult(req);
         if (!error.isEmpty()) {
