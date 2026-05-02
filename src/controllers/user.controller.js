@@ -1,7 +1,9 @@
+import crypto from "crypto";
+
+import { validationResult } from "express-validator";
+
 import userModel from "../models/user.model.js";
 import blackListTokenModel from "../models/blacklistToken.model.js";
-import { validationResult } from "express-validator";
-import crypto from "crypto";
 import { sendMail } from "../services/email.service.js";
 import { otpVerificationTemplate } from "../utils/emailTemplates.js";
 

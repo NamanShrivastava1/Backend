@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 import menuModel from "./menu.model.js";
 
 const cafeSchema = new mongoose.Schema({

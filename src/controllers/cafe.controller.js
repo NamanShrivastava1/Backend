@@ -1,7 +1,8 @@
-import cafeModel from "../models/cafe.model.js";
-import menuModel from "../models/menu.model.js";
 import { validationResult } from "express-validator";
 import QRCode from "qrcode";
+
+import cafeModel from "../models/cafe.model.js";
+import menuModel from "../models/menu.model.js";
 import categoryImageMap from "../utils/categoryImages.js";
 import { sendMail } from "../services/email.service.js";
 import { cafeCreatedTemplate } from "../utils/emailTemplates.js";

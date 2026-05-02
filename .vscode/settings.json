@@ -1,0 +1,23 @@
+{
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true,
+    "source.organizeImports": true
+  },
+
+  "eslint.validate": ["javascript"],
+  "eslint.run": "onType",
+  "eslint.format.enable": true,
+
+  "prettier.requireConfig": true,
+
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+
+  "files.autoSave": "onFocusChange",
+
+  "workbench.colorTheme": "Night Owl Black (No Italics)"
+}
