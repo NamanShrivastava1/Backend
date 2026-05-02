@@ -1,9 +1,9 @@
-const jwt = require('jsonwebtoken');
-const userModel = require('../models/user.model');
-const cafeModel = require('../models/cafe.model');
-const blacklistTokenModel = require('../models/blacklistToken.model');
+import jwt from "jsonwebtoken";
+import userModel from "../models/user.model.js";
+import cafeModel from "../models/cafe.model.js";
+import blacklistTokenModel from "../models/blacklistToken.model.js";
 
-module.exports.authenticateCafe = async (req, res, next) => {
+export const authenticateCafe = async (req, res, next) => {
     try {
         const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
         if (!token) {

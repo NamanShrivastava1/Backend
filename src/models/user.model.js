@@ -1,8 +1,8 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const cafeModel = require("./cafe.model.js");
-const menuModel = require("./menu.model.js");
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import cafeModel from "./cafe.model.js";
+import menuModel from "./menu.model.js";
 
 const userSchema = new mongoose.Schema({
     fullname: {
@@ -86,4 +86,4 @@ userSchema.pre('findOneAndDelete', async function (next) {
 
 const user = mongoose.model("user", userSchema);
 
-module.exports = user;
+export default user;

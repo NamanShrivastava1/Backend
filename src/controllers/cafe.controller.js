@@ -1,12 +1,12 @@
-const cafeModel = require('../models/cafe.model');
-const menuModel = require('../models/menu.model');
-const { validationResult } = require('express-validator');
-const QRCode = require("qrcode");
-const categoryImageMap = require('../utils/categoryImages');
-const { sendMail } = require('../utils/email');
-const { cafeCreatedTemplate } = require('../utils/emailTemplates');
-const redisClient = require('../utils/redis');
-module.exports.cafeInfo = async (req, res) => {
+import cafeModel from "../models/cafe.model.js";
+import menuModel from "../models/menu.model.js";
+import { validationResult } from "express-validator";
+import QRCode from "qrcode";
+import categoryImageMap from "../utils/categoryImages.js";
+import { sendMail } from "../services/email.service.js";
+import { cafeCreatedTemplate } from "../utils/emailTemplates.js";
+
+export const cafeInfo = async (req, res) => {
     try {
         const error = validationResult(req);
         if (!error.isEmpty()) {
@@ -50,15 +50,12 @@ module.exports.cafeInfo = async (req, res) => {
     }
 }
 
-module.exports.showCafeInfo = async (req, res) => {
+export const showCafeInfo = async (req, res) => {
     try {
         const userId = req.user.id;
 
         const cafe = await cafeModel.findOne({ user: userId });
 
-        // if (!cafe) {
-        //     return res.status(404).json({ message: "Cafe not found" });
-        // }
 
         res.status(200).json({
             message: "Cafe info fetched",
@@ -70,7 +67,7 @@ module.exports.showCafeInfo = async (req, res) => {
     }
 };
 
-module.exports.addMenuItems = async (req, res) => {
+export const addMenuItems = async (req, res) => {
     try {
         const error = validationResult(req);
         if (!error.isEmpty()) {
@@ -104,9 +101,7 @@ module.exports.addMenuItems = async (req, res) => {
             cafe: req.cafe._id,
         });
 
-        // ✅ Invalidate Redis cache for this cafe’s menu
-        const cacheKey = `public:menu:${req.cafe._id}`;
-        await redisClient.del(cacheKey);
+
 
         res.status(201).json({
             message: "Menu item added successfully",
@@ -121,7 +116,7 @@ module.exports.addMenuItems = async (req, res) => {
     }
 };
 
-module.exports.getMenuItemsByCafe = async (req, res) => {
+export const getMenuItemsByCafe = async (req, res) => {
     try {
         const { cafeId } = req.params;
         const menuItems = await menuModel.find({ cafe: cafeId });
@@ -137,7 +132,7 @@ module.exports.getMenuItemsByCafe = async (req, res) => {
     }
 };
 
-module.exports.updateMenuItem = async (req, res) => {
+export const updateMenuItem = async (req, res) => {
     try {
         const { menuItemId } = req.params;
 
@@ -182,9 +177,7 @@ module.exports.updateMenuItem = async (req, res) => {
             });
         }
 
-        // ✅ Invalidate Redis cache for this cafe’s menu
-        const cacheKey = `public:menu:${updatedMenu.cafe}`;
-        await redisClient.del(cacheKey);
+
 
         res.status(200).json({
             message: "Menu item updated successfully",
@@ -200,7 +193,7 @@ module.exports.updateMenuItem = async (req, res) => {
 };
 
 
-module.exports.deleteMenuItem = async (req, res) => {
+export const deleteMenuItem = async (req, res) => {
     try {
         const { menuItemId } = req.params;
 
@@ -231,7 +224,7 @@ module.exports.deleteMenuItem = async (req, res) => {
     }
 }
 
-module.exports.generateQRCode = async (req, res) => {
+export const generateQRCode = async (req, res) => {
     try {
         const userId = req.user._id;
         const cafe = await cafeModel.findOne({ user: userId });
@@ -260,7 +253,7 @@ module.exports.generateQRCode = async (req, res) => {
     }
 };
 
-module.exports.getMyMenuItems = async (req, res) => {
+export const getMyMenuItems = async (req, res) => {
     try {
         // Get cafeId from authenticated cafe middleware
         const cafeId = req.cafe._id;
@@ -278,14 +271,9 @@ module.exports.getMyMenuItems = async (req, res) => {
 };
 
 // Public cafe routes
-module.exports.publicCafeController = async (req, res) => {
+export const publicCafeController = async (req, res) => {
     try {
-        // 1️⃣ Try cache first
-        const cachedCafes = await redisClient.get("public:cafes");
-        if (cachedCafes) {
-            console.log("⚡ Serving cafes from Redis cache");
-            return res.status(200).json(JSON.parse(cachedCafes));
-        }
+
 
         // 2️⃣ Fetch from MongoDB
         const cafes = await cafeModel.find();
@@ -307,10 +295,6 @@ module.exports.publicCafeController = async (req, res) => {
 
         const response = { cafes: cafesWithSpecialFlag };
 
-        // 4️⃣ Store in Redis (5 minutes = 300s)
-        await redisClient.setEx("public:cafes", 300, JSON.stringify(response));
-        console.log("🗄️ Cached cafes in Redis");
-
         return res.status(200).json(response);
     } catch (error) {
         console.error("❌ Error fetching public cafes:", error);
@@ -319,17 +303,10 @@ module.exports.publicCafeController = async (req, res) => {
 };
 
 
-module.exports.publicMenuController = async (req, res) => {
+export const publicMenuController = async (req, res) => {
     try {
         const { cafeId } = req.params;
 
-        // 1️⃣ Check cache
-        const cacheKey = `public:menu:${cafeId}`;
-        const cachedMenu = await redisClient.get(cacheKey);
-        if (cachedMenu) {
-            console.log(`⚡ Serving menu for cafe ${cafeId} from Redis`);
-            return res.status(200).json(JSON.parse(cachedMenu));
-        }
 
         // 2️⃣ Fetch from DB
         const menuItems = await menuModel
@@ -358,9 +335,6 @@ module.exports.publicMenuController = async (req, res) => {
 
         const response = { categories };
 
-        // 4️⃣ Cache for 60s
-        await redisClient.setEx(cacheKey, 60, JSON.stringify(response));
-        console.log(`🗄️ Cached menu for cafe ${cafeId}`);
 
         return res.status(200).json(response);
     } catch (error) {
@@ -370,7 +344,7 @@ module.exports.publicMenuController = async (req, res) => {
 };
 
 
-module.exports.toggleAvailability = async (req, res) => {
+export const toggleAvailability = async (req, res) => {
     try {
         const { id } = req.params;
         const menuItem = await menuModel.findById(id);
@@ -381,11 +355,6 @@ module.exports.toggleAvailability = async (req, res) => {
 
         menuItem.isAvailable = !menuItem.isAvailable;
         await menuItem.save();
-
-        // 🔴 Invalidate Redis cache for this cafe's menu
-        // assuming you store menus with key like `menu:${cafeId}`
-        const cacheKey = `public:menu:${menuItem.cafe}`;
-        await redisClient.del(cacheKey);
 
         res.status(200).json({
             message: "Availability updated successfully",

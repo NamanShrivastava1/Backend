@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const menuSchema = new mongoose.Schema({
     dishName: {
@@ -45,4 +45,4 @@ const menuSchema = new mongoose.Schema({
 });
 
 const menu = mongoose.model("menu", menuSchema, "menus");
-module.exports = menu;
+export default menu;

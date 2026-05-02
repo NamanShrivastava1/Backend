@@ -1,12 +1,10 @@
-const express = require("express");
+import express from "express";
+import { body } from "express-validator";
+import * as cafeController from "../controllers/cafe.controller.js";
+import * as userMiddleware from "../middlewares/auth.js";
+import * as cafeMiddleware from "../middlewares/cafeAuth.js";
+
 const router = express.Router();
-
-const { body } = require("express-validator");
-
-const cafeController = require("../controllers/cafe.controller");
-const userMiddleware = require("../middlewares/auth.js")
-const cafeMiddleware = require("../middlewares/cafeAuth.js");
-const user = require("../models/user.model.js");
 
 router.post("/cafeinfo", [
     body("cafename")
@@ -57,4 +55,4 @@ router.put("/menu/:id/toggle-availability", cafeController.toggleAvailability);
 
 
 
-module.exports = router;
+export default router;

@@ -1,8 +1,8 @@
-const jwt = require('jsonwebtoken');
-const userModel = require('../models/user.model');
-const blacklistTokenModel = require('../models/blacklistToken.model');
+import jwt from "jsonwebtoken";
+import userModel from "../models/user.model.js";
+import blacklistTokenModel from "../models/blacklistToken.model.js";
 
-module.exports.authenticateUser = async (req, res, next) => {
+export const authenticateUser = async (req, res, next) => {
     try {
         const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
         if (!token) {

@@ -1,15 +1,16 @@
-const express = require("express");
+import express from "express";
+import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import { fileURLToPath } from "url";
+import userRoutes from "./routes/user.routes.js";
+import cafeRoutes from "./routes/cafe.routes.js";
+import { config } from "./config/config.js";
+
 const app = express();
 
 // Trust proxy for rate limiting & correct IP detection
 app.set("trust proxy", 1);
-
-const rateLimit = require("express-rate-limit");
-const cookieParser = require("cookie-parser");
-const cors = require("cors");
-const path = require("path");
-const userRoutes = require("./routes/user.routes");
-const cafeRoutes = require("./routes/cafe.routes");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -31,7 +32,7 @@ app.use(
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-  })
+  }),
 );
 
 app.use((req, res, next) => {
@@ -39,7 +40,7 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   next();
-})
+});
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -55,8 +56,6 @@ const loginLimiter = rateLimit({
 
 app.use("/api/", apiLimiter);
 app.use("/api/users/login", loginLimiter);
-
-app.use("/uploads", express.static(path.join(__dirname, "./uploads")));
 app.use("/api/users", userRoutes);
 app.use("/api/dashboard", cafeRoutes);
 
@@ -64,4 +63,4 @@ app.get("/", (req, res) => {
   res.send("Welcome to the ScanDine");
 });
 
-module.exports = app;
+export default app;

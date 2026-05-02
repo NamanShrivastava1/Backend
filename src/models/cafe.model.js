@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const menuModel = require("./menu.model.js");
+import mongoose from "mongoose";
+import menuModel from "./menu.model.js";
 
 const cafeSchema = new mongoose.Schema({
     cafename: {
@@ -43,4 +43,4 @@ cafeSchema.pre('findOneAndDelete', async function (next) {
 });
 
 const cafe = mongoose.model("cafe", cafeSchema, "cafes");
-module.exports = cafe;
+export default cafe;

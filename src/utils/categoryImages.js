@@ -9,4 +9,4 @@ const categoryImageMap = {
     "Beverages": "Beverages.jpg"
 };
 
-module.exports = categoryImageMap;
+export default categoryImageMap;
