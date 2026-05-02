@@ -1,14 +1,12 @@
-import { fileURLToPath } from 'url';
-
-import express from 'express';
-import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import express from 'express';
+import rateLimit from 'express-rate-limit';
 
 import morganLogger from './loggers/morgan.logger.js';
-import userRoutes from './routes/user.routes.js';
 import cafeRoutes from './routes/cafe.routes.js';
-import { config } from './config/config.js';
+import userRoutes from './routes/user.routes.js';
+import AppError from './utils/appError.js';
 
 const app = express();
 app.use(morganLogger);
@@ -61,6 +59,58 @@ app.use('/api/dashboard', cafeRoutes);
 
 app.get('/', (req, res) => {
   res.send('Welcome to the ScanDine');
+});
+// 404 Route Handler
+app.use((req, res, next) => {
+  throw new AppError(`Route ${req.originalUrl} not found`, 404);
+});
+
+// Global Error Handling Middleware
+app.use((error, req, res, next) => {
+  error.statusCode = error.statusCode || 500;
+  error.status = error.status || 'error';
+
+  // Handle JWT errors
+  if (error.name === 'JsonWebTokenError') {
+    error.statusCode = 401;
+    error.status = 'fail';
+    error.message = 'Invalid token';
+  }
+
+  if (error.name === 'TokenExpiredError') {
+    error.statusCode = 401;
+    error.status = 'fail';
+    error.message = 'Token expired. Please log in again';
+  }
+
+  // Handle Mongoose errors
+  if (error.name === 'CastError') {
+    error.statusCode = 400;
+    error.status = 'fail';
+    error.message = `Invalid ${error.path}: ${error.value}`;
+  }
+
+  if (error.code === 11000) {
+    error.statusCode = 400;
+    error.status = 'fail';
+    error.message = `Duplicate field value entered`;
+  }
+
+  if (error.name === 'ValidationError') {
+    error.statusCode = 400;
+    error.status = 'fail';
+    error.message = Object.values(error.errors)
+      .map((e) => e.message)
+      .join(', ');
+  }
+
+  const response = {
+    status: error.status,
+    message: error.message,
+    ...(process.env.NODE_ENV === 'development' && { error: error }),
+  };
+
+  res.status(error.statusCode).json(response);
 });
 
 export default app;
