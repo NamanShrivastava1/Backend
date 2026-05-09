@@ -57,7 +57,7 @@ app.use('/api/', apiLimiter);
 app.use('/api/users/login', loginLimiter);
 app.use('/api/users', userRoutes);
 app.use('/api/menu', menuRoutes);
-app.use('/api/dashboard', cafeRoutes);
+app.use('/api/cafe', cafeRoutes);
 
 app.get('/', (req, res) => {
   res.send('Welcome to the ScanDine');
