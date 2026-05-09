@@ -1,6 +1,7 @@
 import { validationResult } from 'express-validator';
 
 import menuModel from '../models/menu.model.js';
+import { deleteFile, uploadMultipleFiles } from '../services/storage.service.js';
 import AppError from '../utils/appError.js';
 import categoryImageMap from '../utils/categoryImages.js';
 
@@ -197,6 +198,70 @@ export const toggleMenuItemAvailability = async (req, res, next) => {
       message: 'Availability updated successfully',
       menuItemId: menuItem._id,
       isAvailable: menuItem.isAvailable,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadMenuItemImages = async (req, res, next) => {
+  try {
+    const { menuItemId } = req.params;
+
+    if (!menuItemId) {
+      throw new AppError('Menu item ID is required', 400);
+    }
+
+    if (!req.files || req.files.length === 0) {
+      throw new AppError('No image files provided', 400);
+    }
+
+    if (req.files.length > 5) {
+      throw new AppError('Maximum 5 images allowed per menu item', 400);
+    }
+
+    const menuItem = await menuModel.findById(menuItemId);
+
+    if (!menuItem) {
+      throw new AppError('Menu item not found', 404);
+    }
+
+    // Delete old images if they exist
+    if (menuItem.images && Array.isArray(menuItem.images)) {
+      try {
+        await Promise.all(
+          menuItem.images.map((img) => {
+            if (img.fileId) {
+              return deleteFile(img.fileId);
+            }
+          })
+        );
+      } catch (error) {
+        console.warn('Failed to delete old images:', error.message);
+      }
+    }
+
+    // Upload new images
+    const fileNames = req.files.map((file, index) => `menu-${menuItemId}-${index}-${Date.now()}`);
+    const uploadedImages = await uploadMultipleFiles(
+      req.files.map((file) => file.buffer),
+      fileNames,
+      'scandine/menu'
+    );
+
+    // Update menu item with new images
+    menuItem.images = uploadedImages.map((img) => ({
+      url: img.url,
+      fileId: img.fileId,
+      fileName: img.fileName,
+    }));
+
+    await menuItem.save();
+
+    res.status(200).json({
+      message: `${uploadedImages.length} image(s) uploaded successfully`,
+      images: menuItem.images,
+      menuItem,
     });
   } catch (error) {
     next(error);

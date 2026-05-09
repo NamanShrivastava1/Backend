@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import cafeModel from '../models/cafe.model.js';
 import menuModel from '../models/menu.model.js';
 import { sendMail } from '../services/email.service.js';
+import { uploadFile, deleteFile } from '../services/storage.service.js';
 import AppError from '../utils/appError.js';
 import { cafeCreatedTemplate } from '../utils/emailTemplates.js';
 
@@ -111,6 +112,47 @@ export const publicCafeController = async (req, res, next) => {
     const response = { cafes: cafesWithSpecialFlag };
 
     return res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadCafeImage = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      throw new AppError('No image file provided', 400);
+    }
+
+    const userId = req.user._id;
+    const cafe = await cafeModel.findOne({ user: userId });
+
+    if (!cafe) {
+      throw new AppError('Cafe not found for this user', 404);
+    }
+
+    // Delete old image if exists
+    if (cafe.imageFileId) {
+      try {
+        await deleteFile(cafe.imageFileId);
+      } catch (error) {
+        console.warn('Failed to delete old image:', error.message);
+      }
+    }
+
+    // Upload new image
+    const fileName = `cafe-${cafe._id}-${Date.now()}`;
+    const uploadedImage = await uploadFile(req.file.buffer, fileName, 'scandine/cafes');
+
+    // Update cafe with new image
+    cafe.image = uploadedImage.url;
+    cafe.imageFileId = uploadedImage.fileId;
+    await cafe.save();
+
+    res.status(200).json({
+      message: 'Cafe image uploaded successfully',
+      image: uploadedImage.url,
+      cafe,
+    });
   } catch (error) {
     next(error);
   }

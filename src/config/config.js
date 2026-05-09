@@ -31,4 +31,6 @@ export const config = {
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   REFRESH_TOKEN: process.env.REFRESH_TOKEN,
   EMAIL_USER: process.env.EMAIL_USER,
+
+  IMAGE_KIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
 };
