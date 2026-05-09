@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 
 import morganLogger from './loggers/morgan.logger.js';
 import cafeRoutes from './routes/cafe.routes.js';
+import menuRoutes from './routes/menu.routes.js';
 import userRoutes from './routes/user.routes.js';
 import AppError from './utils/appError.js';
 
@@ -55,6 +56,7 @@ const loginLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 app.use('/api/users/login', loginLimiter);
 app.use('/api/users', userRoutes);
+app.use('/api/menu', menuRoutes);
 app.use('/api/dashboard', cafeRoutes);
 
 app.get('/', (req, res) => {

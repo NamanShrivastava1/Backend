@@ -23,6 +23,10 @@ export const authenticateCafe = async (req, res, next) => {
       throw new AppError('Invalid or expired token', 401);
     }
 
+    if (user.jwtVersion !== decoded.jwtVersion) {
+      throw new AppError('Session expired. Please login again', 401);
+    }
+
     const cafe = await cafeModel.findOne({ user: user._id });
     req.user = user;
     if (!cafe) {
