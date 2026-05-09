@@ -2,15 +2,18 @@ import ImageKit from '@imagekit/nodejs';
 import { config } from '../config/config.js';
 
 const client = new ImageKit({
-  privateKey: config.IMAGE_KIT_PRIVATE_KEY,
+  privateKey: config.IMAGEKIT_PRIVATE_KEY,
 });
 
 export async function uploadFile(buffer, fileName, folder = 'scandine') {
   try {
+    // Ensure buffer is in the correct format
+    const fileBuffer = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+
     const result = await client.files.upload({
-      file: buffer,
+      file: fileBuffer,
       fileName,
-      folder,
+      folder: `/${folder}`, // Ensure folder starts with /
     });
 
     return {
@@ -19,27 +22,46 @@ export async function uploadFile(buffer, fileName, folder = 'scandine') {
       fileName: result.name,
     };
   } catch (error) {
+    console.error('ImageKit upload error details:', error);
     throw new Error(`ImageKit upload failed: ${error.message}`);
   }
 }
 
 export async function uploadMultipleFiles(buffers, fileNames, folder = 'scandine') {
   try {
-    const uploadPromises = buffers.map((buffer, index) =>
-      client.files.upload({
-        file: buffer,
-        fileName: fileNames[index],
-        folder,
-      })
-    );
+    const results = [];
 
-    const results = await Promise.all(uploadPromises);
+    // Upload files sequentially to avoid rate limiting
+    for (let i = 0; i < buffers.length; i++) {
+      try {
+        // Ensure buffer is in the correct format
+        const fileBuffer = Buffer.isBuffer(buffers[i]) ? buffers[i] : Buffer.from(buffers[i]);
 
-    return results.map((result) => ({
-      url: result.url,
-      fileId: result.fileId,
-      fileName: result.name,
-    }));
+        const result = await client.files.upload({
+          file: fileBuffer,
+          fileName: fileNames[i],
+          folder: `/${folder}`, // Ensure folder starts with /
+        });
+
+        results.push({
+          url: result.url,
+          fileId: result.fileId,
+          fileName: result.name,
+        });
+      } catch (uploadError) {
+        // If one upload fails, clean up already uploaded files
+        for (const uploaded of results) {
+          try {
+            await deleteFile(uploaded.fileId);
+          } catch (cleanupError) {
+            console.warn(`Failed to cleanup file ${uploaded.fileId}:`, cleanupError.message);
+          }
+        }
+        throw new Error(`Failed to upload file ${fileNames[i]}: ${uploadError.message}`);
+      }
+    }
+
+    return results;
   } catch (error) {
     throw new Error(`ImageKit batch upload failed: ${error.message}`);
   }
