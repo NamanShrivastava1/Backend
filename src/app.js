@@ -10,69 +10,58 @@ import userRoutes from './routes/user.routes.js';
 import AppError from './utils/appError.js';
 
 const app = express();
+
 app.use(morganLogger);
-
-// Trust proxy for rate limiting & correct IP detection
 app.set('trust proxy', 1);
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 const allowedOrigins = ['http://localhost:8080', 'https://scan-dine.vercel.app'];
-
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      console.log('Blocked by CORS:', origin);
-      return callback(new Error('Not allowed by CORS'));
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new AppError('Not allowed by CORS', 403));
     },
     credentials: true,
   })
 );
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  next();
-});
-
+// Rate Limiters
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per window
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: { error: 'Too many requests, please try again later.' },
 });
 
 const loginLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 5, // max 5 login attempts
+  windowMs: 5 * 60 * 1000,
+  max: 5,
   message: { error: 'Too many login attempts, please try again later.' },
 });
 
 app.use('/api/', apiLimiter);
 app.use('/api/users/login', loginLimiter);
+
+// Routes
 app.use('/api/users', userRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/cafe', cafeRoutes);
 
-app.get('/', (req, res) => {
-  res.send('Welcome to the ScanDine');
-});
-// 404 Route Handler
+// Health Check
+app.get('/health', (req, res) => res.json({ status: 'OK' }));
+
+// 404 Handler
 app.use((req, res, next) => {
-  throw new AppError(`Route ${req.originalUrl} not found`, 404);
+  next(new AppError(`Route ${req.originalUrl} not found`, 404));
 });
 
-// Global Error Handling Middleware
+// Global Error Handler
 app.use((error, req, res, next) => {
   error.statusCode = error.statusCode || 500;
   error.status = error.status || 'error';
 
-  // Handle JWT errors
   if (error.name === 'JsonWebTokenError') {
     error.statusCode = 401;
     error.status = 'fail';
@@ -85,7 +74,6 @@ app.use((error, req, res, next) => {
     error.message = 'Token expired. Please log in again';
   }
 
-  // Handle Mongoose errors
   if (error.name === 'CastError') {
     error.statusCode = 400;
     error.status = 'fail';
@@ -95,7 +83,7 @@ app.use((error, req, res, next) => {
   if (error.code === 11000) {
     error.statusCode = 400;
     error.status = 'fail';
-    error.message = `Duplicate field value entered`;
+    error.message = 'Duplicate field value entered';
   }
 
   if (error.name === 'ValidationError') {
@@ -106,13 +94,11 @@ app.use((error, req, res, next) => {
       .join(', ');
   }
 
-  const response = {
+  res.status(error.statusCode).json({
     status: error.status,
     message: error.message,
-    ...(process.env.NODE_ENV === 'development' && { error: error }),
-  };
-
-  res.status(error.statusCode).json(response);
+    ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
+  });
 });
 
 export default app;
