@@ -43,13 +43,13 @@ const loginLimiter = rateLimit({
   message: { error: 'Too many login attempts, please try again later.' },
 });
 
-app.use('/api/', apiLimiter);
-app.use('/api/users/login', loginLimiter);
+app.use('/api/v1', apiLimiter);
+app.use('/api/v1/users/login', loginLimiter);
 
 // Routes
-app.use('/api/users', userRoutes);
-app.use('/api/menu', menuRoutes);
-app.use('/api/cafe', cafeRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/menu', menuRoutes);
+app.use('/api/v1/cafe', cafeRoutes);
 
 // Health Check
 app.get('/health', (req, res) => res.json({ status: 'OK' }));
