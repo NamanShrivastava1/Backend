@@ -148,7 +148,7 @@ export const updateCafe = async (req, res, next) => {
       }
 
       const fileName = `cafe-${cafe._id}-${Date.now()}`;
-      const uploadedImage = await uploadFile(req.file.buffer, fileName, 'scandine/cafes');
+      const uploadedImage = await uploadFile(req.file, fileName, 'scandine/cafes');
       cafe.image = uploadedImage.url;
       cafe.imageFileId = uploadedImage.fileId;
     }
@@ -188,7 +188,7 @@ export const uploadCafeImage = async (req, res, next) => {
 
     // Upload new image
     const fileName = `cafe-${cafe._id}-${Date.now()}`;
-    const uploadedImage = await uploadFile(req.file.buffer, fileName, 'scandine/cafes');
+    const uploadedImage = await uploadFile(req.file, fileName, 'scandine/cafes');
 
     // Update cafe with new image
     cafe.image = uploadedImage.url;
