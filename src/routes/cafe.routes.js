@@ -4,7 +4,7 @@ import * as cafeController from '../controllers/cafe.controller.js';
 import * as userMiddleware from '../middlewares/auth.js';
 import * as cafeMiddleware from '../middlewares/cafeAuth.js';
 import { uploadSingle } from '../utils/multer.js';
-import { validateCafe } from '../validators/cafe.validator.js';
+import { validateCafe, validateCafeUpdate } from '../validators/cafe.validator.js';
 
 const router = express.Router();
 
@@ -28,6 +28,15 @@ router.post(
   cafeMiddleware.authenticateCafe,
   uploadSingle,
   cafeController.uploadCafeImage
+);
+
+// Update cafe information (authenticated cafe owner)
+router.put(
+  '/updateCafe',
+  cafeMiddleware.authenticateCafe,
+  uploadSingle,
+  validateCafeUpdate,
+  cafeController.updateCafe
 );
 
 // Get all public cafes (public)

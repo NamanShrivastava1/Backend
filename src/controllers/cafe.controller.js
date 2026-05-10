@@ -4,7 +4,7 @@ import QRCode from 'qrcode';
 import cafeModel from '../models/cafe.model.js';
 import menuModel from '../models/menu.model.js';
 import { sendMail } from '../services/email.service.js';
-import { uploadFile, deleteFile } from '../services/storage.service.js';
+import { deleteFile, uploadFile } from '../services/storage.service.js';
 import AppError from '../utils/appError.js';
 import { cafeCreatedTemplate } from '../utils/emailTemplates.js';
 
@@ -112,6 +112,53 @@ export const publicCafeController = async (req, res, next) => {
     const response = { cafes: cafesWithSpecialFlag };
 
     return res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateCafe = async (req, res, next) => {
+  try {
+    const cafe = req.cafe;
+    const { cafename, address, phoneNo, description } = req.body;
+
+    if (!cafename && !address && !phoneNo && description === undefined && !req.file) {
+      throw new AppError('At least one field or image is required to update', 400);
+    }
+
+    if (phoneNo && phoneNo !== cafe.phoneNo) {
+      const existingCafe = await cafeModel.findOne({ phoneNo, _id: { $ne: cafe._id } });
+      if (existingCafe) {
+        throw new AppError('Phone number is already used by another cafe', 400);
+      }
+    }
+
+    if (cafename !== undefined) cafe.cafename = cafename;
+    if (address !== undefined) cafe.address = address;
+    if (phoneNo !== undefined) cafe.phoneNo = phoneNo;
+    if (description !== undefined) cafe.description = description;
+
+    if (req.file) {
+      if (cafe.imageFileId) {
+        try {
+          await deleteFile(cafe.imageFileId);
+        } catch (error) {
+          console.warn('Failed to delete old cafe image:', error.message);
+        }
+      }
+
+      const fileName = `cafe-${cafe._id}-${Date.now()}`;
+      const uploadedImage = await uploadFile(req.file.buffer, fileName, 'scandine/cafes');
+      cafe.image = uploadedImage.url;
+      cafe.imageFileId = uploadedImage.fileId;
+    }
+
+    await cafe.save();
+
+    res.status(200).json({
+      message: 'Cafe updated successfully',
+      cafe,
+    });
   } catch (error) {
     next(error);
   }
