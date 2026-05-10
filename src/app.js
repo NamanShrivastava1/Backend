@@ -2,6 +2,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 
 import morganLogger from './loggers/morgan.logger.js';
 import cafeRoutes from './routes/cafe.routes.js';
@@ -16,6 +17,7 @@ app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(helmet());
 
 const allowedOrigins = ['http://localhost:8080', 'https://scan-dine.vercel.app'];
 app.use(

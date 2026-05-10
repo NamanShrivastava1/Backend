@@ -30,7 +30,7 @@ export const registerUser = async (req, res, next) => {
 
     const hashedPassword = await userModel.hashPassword(password);
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = Math.floor(100000 + crypto.randomInt(900000)).toString();
 
     const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
 
