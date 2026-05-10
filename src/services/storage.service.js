@@ -5,15 +5,38 @@ const client = new ImageKit({
   privateKey: config.IMAGEKIT_PRIVATE_KEY,
 });
 
-export async function uploadFile(buffer, fileName, folder = 'scandine') {
+function getFolderPath(folder) {
+  if (!folder) return '/scandine';
+  return folder.startsWith('/') ? folder : `/${folder}`;
+}
+
+function getImageKitFileData(file) {
+  let buffer;
+  let mimetype = 'application/octet-stream';
+
+  if (Buffer.isBuffer(file)) {
+    buffer = file;
+  } else if (file && file.buffer && file.mimetype) {
+    buffer = file.buffer;
+    mimetype = file.mimetype;
+  } else if (typeof file === 'string') {
+    return file;
+  } else {
+    throw new Error('Invalid file data for upload');
+  }
+
+  const base64 = buffer.toString('base64');
+  return `data:${mimetype};base64,${base64}`;
+}
+
+export async function uploadFile(file, fileName, folder = 'scandine') {
   try {
-    // Ensure buffer is in the correct format
-    const fileBuffer = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+    const fileData = getImageKitFileData(file);
 
     const result = await client.files.upload({
-      file: fileBuffer,
+      file: fileData,
       fileName,
-      folder: `/${folder}`, // Ensure folder starts with /
+      folder: getFolderPath(folder),
     });
 
     return {
@@ -27,20 +50,19 @@ export async function uploadFile(buffer, fileName, folder = 'scandine') {
   }
 }
 
-export async function uploadMultipleFiles(buffers, fileNames, folder = 'scandine') {
+export async function uploadMultipleFiles(files, fileNames, folder = 'scandine') {
   try {
     const results = [];
+    const folderPath = getFolderPath(folder);
 
-    // Upload files sequentially to avoid rate limiting
-    for (let i = 0; i < buffers.length; i++) {
+    for (let i = 0; i < files.length; i++) {
       try {
-        // Ensure buffer is in the correct format
-        const fileBuffer = Buffer.isBuffer(buffers[i]) ? buffers[i] : Buffer.from(buffers[i]);
+        const fileData = getImageKitFileData(files[i]);
 
         const result = await client.files.upload({
-          file: fileBuffer,
+          file: fileData,
           fileName: fileNames[i],
-          folder: `/${folder}`, // Ensure folder starts with /
+          folder: folderPath,
         });
 
         results.push({
@@ -49,7 +71,6 @@ export async function uploadMultipleFiles(buffers, fileNames, folder = 'scandine
           fileName: result.name,
         });
       } catch (uploadError) {
-        // If one upload fails, clean up already uploaded files
         for (const uploaded of results) {
           try {
             await deleteFile(uploaded.fileId);

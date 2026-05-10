@@ -243,11 +243,7 @@ export const uploadMenuItemImages = async (req, res, next) => {
 
     // Upload new images
     const fileNames = req.files.map((file, index) => `menu-${menuItemId}-${index}-${Date.now()}`);
-    const uploadedImages = await uploadMultipleFiles(
-      req.files.map((file) => file.buffer),
-      fileNames,
-      'scandine/menu'
-    );
+    const uploadedImages = await uploadMultipleFiles(req.files, fileNames, 'scandine/menu');
 
     // Update menu item with new images
     menuItem.images = uploadedImages.map((img) => ({
