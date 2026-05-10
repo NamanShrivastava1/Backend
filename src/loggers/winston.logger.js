@@ -1,8 +1,6 @@
 import winston from 'winston';
-
 import { config } from '../config/config.js';
 
-// Define custom log levels
 const levels = {
   error: 0,
   warn: 1,
@@ -11,21 +9,17 @@ const levels = {
   debug: 4,
 };
 
-// Define different log level based on environment
 const getLevel = () => {
-  const env = config.NODE_ENV || 'development';
-
-  switch (env) {
+  switch (config.NODE_ENV) {
     case 'production':
-      return 'info'; // Only logs info and above in production
+      return 'info';
     case 'testing':
-      return 'warn'; // Only logs warn and above in testing
+      return 'warn';
     default:
-      return 'debug'; // Logs everything in development
+      return 'debug';
   }
 };
 
-// Define colors for each level
 const colors = {
   error: 'red',
   warn: 'yellow',
@@ -34,17 +28,25 @@ const colors = {
   debug: 'white',
 };
 
-// Add colors to winston
 winston.addColors(colors);
 
-// Define format for console logs with colors
 const consoleFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
-  winston.format.printf((info) => `${info.timestamp} [${info.level}]: ${info.message}`)
+  winston.format.printf(({ timestamp, level, message, ...meta }) => {
+    // print extra metadata (error, stack, url etc.) if present
+    const metaStr = Object.keys(meta).length ? '\n' + JSON.stringify(meta, null, 2) : '';
+    return `${timestamp} [${level}]: ${message}${metaStr}`;
+  })
 );
 
-// Create the logger with only console transport
+// JSON format for production log files (readable by log tools)
+const fileFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.errors({ stack: true }), // captures stack trace
+  winston.format.json()
+);
+
 const logger = winston.createLogger({
   level: getLevel(),
   levels,
@@ -52,16 +54,28 @@ const logger = winston.createLogger({
     new winston.transports.Console({
       format: consoleFormat,
     }),
+
+    // Save errors to file in production
+    ...(config.NODE_ENV === 'production'
+      ? [
+          new winston.transports.File({
+            filename: 'logs/error.log',
+            level: 'error',
+            format: fileFormat,
+          }),
+          new winston.transports.File({
+            filename: 'logs/combined.log',
+            format: fileFormat,
+          }),
+        ]
+      : []),
   ],
-  // Don't exit on uncaught exceptions
   exitOnError: false,
 });
 
-// Create a stream object for morgan integration
+// Morgan stream
 logger.stream = {
-  write: (message) => {
-    logger.http(message.trim());
-  },
+  write: (message) => logger.http(message.trim()),
 };
 
 export default logger;
