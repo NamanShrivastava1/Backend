@@ -55,4 +55,25 @@ router.delete('/delete', middleware.authenticateUser, userController.deleteUser)
  */
 router.post('/verify-otp', userController.verifyOtp);
 
+/**
+ * @route       POST /api/v1/users/resend-otp
+ * @description Resend OTP for account activation or verification
+ * @access      Public
+ */
+router.post('/resend-otp', userController.resendOtp);
+
+/**
+ * @route       POST /api/v1/users/forget-password
+ * @description Forget password
+ * @access      Public
+ */
+router.post('/forget-password', userController.forgetPassword);
+
+/**
+ * @route       POST /api/v1/users/reset-password
+ * @description Reset password
+ * @access      Private (Authenticated User)
+ */
+router.post('/reset-password', middleware.authenticateUser, userController.resetPassword);
+
 export default router;

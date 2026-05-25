@@ -225,3 +225,125 @@ export const verifyOtp = async (req, res, next) => {
     next(error);
   }
 };
+
+export const resendOtp = async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      throw new AppError('User ID is required', 400);
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    if (user.isVerified) {
+      throw new AppError('User already verified', 400);
+    }
+
+    const otp = Math.floor(100000 + crypto.randomInt(900000)).toString();
+    const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+
+    user.otp = hashedOtp;
+    user.otpExpiry = Date.now() + 5 * 60 * 1000; // 5 mins
+    await user.save();
+
+    await sendMail(
+      user.email,
+      'Verify your ScanDine Account',
+      otpVerificationTemplate(user.fullname, otp)
+    );
+
+    res.status(200).json({
+      message: 'OTP sent successfully. Please verify your email',
+      userId: user._id,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const forgetPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      throw new AppError('Email is required', 400);
+    }
+
+    const user = await userModel.findOne({ email });
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    const otp = Math.floor(100000 + crypto.randomInt(900000)).toString();
+
+    const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+
+    user.resetPasswordOtp = hashedOtp;
+
+    user.resetPasswordOtpExpiry = Date.now() + 5 * 60 * 1000;
+
+    await user.save();
+
+    await sendMail(
+      user.email,
+      'Reset Your ScanDine Password',
+      otpVerificationTemplate(user.fullname, otp)
+    );
+
+    res.status(200).json({
+      message: 'Password reset OTP sent successfully',
+      userId: user._id,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { userId, otp, newPassword } = req.body;
+
+    if (!userId || !otp || !newPassword) {
+      throw new AppError('User ID, OTP, and new password are required', 400);
+    }
+
+    const user = await userModel.findById(userId).select('+password');
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    if (user.resetPasswordOtpExpiry < Date.now()) {
+      throw new AppError('Password reset OTP has expired', 400);
+    }
+
+    const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
+
+    if (!crypto.timingSafeEqual(Buffer.from(hashedOtp), Buffer.from(user.resetPasswordOtp))) {
+      throw new AppError('Invalid OTP', 400);
+    }
+
+    // Hash new password
+    user.password = await userModel.hashPassword(newPassword);
+
+    // Clear reset password fields
+    user.resetPasswordOtp = undefined;
+    user.resetPasswordOtpExpiry = undefined;
+
+    // Save user
+    await user.save();
+
+    // Clear sensitive cookie if exists
+    res.clearCookie('token');
+
+    res.status(200).json({
+      message: 'Password reset successful. Please login with your new password',
+    });
+  } catch (error) {
+    next(error);
+  }
+};

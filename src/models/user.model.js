@@ -5,47 +5,58 @@ import mongoose from 'mongoose';
 import cafeModel from './cafe.model.js';
 import menuModel from './menu.model.js';
 
-const userSchema = new mongoose.Schema({
-  fullname: {
-    type: String,
-    required: true,
-    trim: true,
-    lowercase: true,
+const userSchema = new mongoose.Schema(
+  {
+    fullname: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+    mobile: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: true,
+      minlength: 6,
+      select: false,
+    },
+    jwtVersion: {
+      type: Number,
+      default: 0,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    otp: {
+      type: String,
+    },
+    otpExpiry: {
+      type: Date,
+    },
+    resetPasswordOtp: {
+      type: String,
+    },
+    resetPasswordOtpExpiry: {
+      type: Date,
+    },
   },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    lowercase: true,
-  },
-  mobile: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-  },
-  password: {
-    type: String,
-    required: true,
-    minlength: 6,
-    select: false,
-  },
-  jwtVersion: {
-    type: Number,
-    default: 0,
-  },
-  isVerified: {
-    type: Boolean,
-    default: false,
-  },
-  otp: {
-    type: String,
-  },
-  otpExpiry: {
-    type: Date,
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
 userSchema.methods.generateAuthToken = function () {
   const token = jwt.sign(
