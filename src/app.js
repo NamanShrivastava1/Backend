@@ -17,7 +17,7 @@ app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
 
 const allowedOrigins = ['http://localhost:8080', 'https://scan-dine.vercel.app'];
 app.use(

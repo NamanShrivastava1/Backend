@@ -74,6 +74,10 @@ export const loginUser = async (req, res, next) => {
       throw new AppError('Invalid email or password', 401);
     }
 
+    if (!user.isVerified) {
+      throw new AppError('You are not Verified');
+    }
+
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       throw new AppError('Invalid email or password', 401);
@@ -184,18 +188,29 @@ export const verifyOtp = async (req, res, next) => {
       throw new AppError('User not found', 404);
     }
 
+    if (user.isVerified) {
+      throw new AppError('User already verified', 400);
+    }
+
     if (!user.otp || !user.otpExpiry) {
       throw new AppError('OTP not generated', 400);
     }
 
     if (user.otpExpiry < Date.now()) {
+      user.otp = undefined;
+      user.otpExpiry = undefined;
+
+      await user.save();
+
       throw new AppError('OTP has expired. Please request a new one', 400);
     }
 
     // Hash entered OTP to compare with DB
     const hashedOtp = crypto.createHash('sha256').update(otp).digest('hex');
 
-    if (hashedOtp !== user.otp) {
+    const isOtpValid = crypto.timingSafeEqual(Buffer.from(hashedOtp), Buffer.from(user.otp));
+
+    if (!isOtpValid) {
       throw new AppError('Invalid OTP', 400);
     }
 
