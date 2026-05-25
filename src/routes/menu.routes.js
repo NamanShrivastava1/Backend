@@ -7,13 +7,25 @@ import { validateMenu } from '../validators/menu.validator.js';
 
 const router = express.Router();
 
-// Add menu item (authenticated cafe owner)
+/**
+ * @route       POST /api/v1/menu/
+ * @description Add a new menu item to the cafe
+ * @access      Private (Authenticated Cafe Owner)
+ */
 router.post('/', validateMenu, cafeMiddleware.authenticateCafe, menuController.addMenuItems);
 
-// Get my cafe's menu (authenticated cafe owner)
+/**
+ * @route       GET /api/v1/menu/my-menu
+ * @description Get all menu items for the authenticated cafe
+ * @access      Private (Authenticated Cafe Owner)
+ */
 router.get('/my-menu', cafeMiddleware.authenticateCafe, menuController.getMyMenuItems);
 
-// Upload menu item images - max 5 images (authenticated cafe owner) - SPECIFIC ROUTE
+/**
+ * @route       POST /api/v1/menu/upload-images/:menuItemId
+ * @description Upload up to 5 images for a menu item
+ * @access      Private (Authenticated Cafe Owner)
+ */
 router.post(
   '/upload-images/:menuItemId',
   cafeMiddleware.authenticateCafe,
@@ -21,23 +33,43 @@ router.post(
   menuController.uploadMenuItemImages
 );
 
-// Toggle menu item availability (authenticated cafe owner) - SPECIFIC ROUTE
+/**
+ * @route       PUT /api/v1/menu/availability/:id
+ * @description Toggle the availability status of a menu item
+ * @access      Private (Authenticated Cafe Owner)
+ */
 router.put(
   '/availability/:id',
   cafeMiddleware.authenticateCafe,
   menuController.toggleMenuItemAvailability
 );
 
-// Get public menu for a cafe (specific route)
+/**
+ * @route       GET /api/v1/menu/public/:cafeId
+ * @description Get public menu items for a specific cafe
+ * @access      Public
+ */
 router.get('/public/:cafeId', menuController.publicMenuController);
 
-// Update menu item (authenticated cafe owner) - GENERIC ROUTE with PUT
+/**
+ * @route       PUT /api/v1/menu/:menuItemId
+ * @description Update details of a specific menu item
+ * @access      Private (Authenticated Cafe Owner)
+ */
 router.put('/:menuItemId', cafeMiddleware.authenticateCafe, menuController.updateMenuItem);
 
-// Delete menu item (authenticated cafe owner) - GENERIC ROUTE with DELETE
+/**
+ * @route       DELETE /api/v1/menu/:menuItemId
+ * @description Delete a specific menu item
+ * @access      Private (Authenticated Cafe Owner)
+ */
 router.delete('/:menuItemId', cafeMiddleware.authenticateCafe, menuController.deleteMenuItem);
 
-// Get menu items for a cafe (public) - GENERIC ROUTE - LAST
+/**
+ * @route       GET /api/v1/menu/:cafeId
+ * @description Get all menu items for a specific cafe
+ * @access      Public
+ */
 router.get('/:cafeId', menuController.getMenuItemsByCafe);
 
 export default router;

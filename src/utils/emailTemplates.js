@@ -74,9 +74,4 @@ const cafeCreatedTemplate = (userName, cafeName) => {
   `;
 };
 
-
-export {
-  otpVerificationTemplate,
-  resetPasswordTemplate,
-  cafeCreatedTemplate
-};
+export { otpVerificationTemplate, resetPasswordTemplate, cafeCreatedTemplate };

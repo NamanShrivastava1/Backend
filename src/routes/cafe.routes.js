@@ -8,7 +8,11 @@ import { validateCafe, validateCafeUpdate } from '../validators/cafe.validator.j
 
 const router = express.Router();
 
-// Create cafe (authenticated user)
+/**
+ * @route       POST /api/v1/cafe/createCafe
+ * @description Create a new cafe for the authenticated user
+ * @access      Private (Authenticated User)
+ */
 router.post(
   '/createCafe',
   validateCafe,
@@ -16,13 +20,25 @@ router.post(
   cafeController.createCafe
 );
 
-// Get cafe info (authenticated user)
+/**
+ * @route       GET /api/v1/cafe/showCafe
+ * @description Get cafe details for the authenticated user
+ * @access      Private (Authenticated User)
+ */
 router.get('/showCafe', userMiddleware.authenticateUser, cafeController.showCafeInfo);
 
-// Generate QR code (cafe owner)
+/**
+ * @route       GET /api/v1/cafe/generate-qr
+ * @description Generate QR code for the authenticated cafe
+ * @access      Private (Authenticated Cafe Owner)
+ */
 router.get('/generate-qr', cafeMiddleware.authenticateCafe, cafeController.generateQRCode);
 
-// Upload cafe image (authenticated cafe owner)
+/**
+ * @route       POST /api/v1/cafe/upload-image
+ * @description Upload cafe image/logo
+ * @access      Private (Authenticated Cafe Owner)
+ */
 router.post(
   '/upload-image',
   cafeMiddleware.authenticateCafe,
@@ -30,7 +46,11 @@ router.post(
   cafeController.uploadCafeImage
 );
 
-// Update cafe information (authenticated cafe owner)
+/**
+ * @route       PUT /api/v1/cafe/updateCafe
+ * @description Update cafe profile and details
+ * @access      Private (Authenticated Cafe Owner)
+ */
 router.put(
   '/updateCafe',
   cafeMiddleware.authenticateCafe,
@@ -39,7 +59,11 @@ router.put(
   cafeController.updateCafe
 );
 
-// Get all public cafes (public)
+/**
+ * @route       GET /api/v1/cafe/public-cafes
+ * @description Get a list of all public cafes
+ * @access      Public
+ */
 router.get('/public-cafes', cafeController.publicCafeController);
 
 export default router;

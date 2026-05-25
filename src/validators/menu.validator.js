@@ -1,4 +1,4 @@
-import { body, validationResult } from "express-validator";
+import { body, validationResult } from 'express-validator';
 
 function validateRequest(req, res, next) {
   const errors = validationResult(req);
@@ -9,13 +9,13 @@ function validateRequest(req, res, next) {
 }
 
 export const validateMenu = [
-  body("dishName").notEmpty().withMessage("Dish name is required"),
-  body("price")
+  body('dishName').notEmpty().withMessage('Dish name is required'),
+  body('price')
     .notEmpty()
-    .withMessage("Price is required")
+    .withMessage('Price is required')
     .isNumeric()
-    .withMessage("Price must be a number"),
-  body("category").notEmpty().withMessage("Category is required"),
+    .withMessage('Price must be a number'),
+  body('category').notEmpty().withMessage('Category is required'),
 
   validateRequest,
 ];
