@@ -35,6 +35,7 @@ const startServer = async () => {
     });
 
     // Render sends SIGTERM on restart/deploy
+    // Finish ongoing requests first -> Then stop server
     process.on('SIGTERM', () => {
       logger.info('SIGTERM received — shutting down gracefully');
       server.close(() => {
