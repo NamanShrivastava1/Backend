@@ -6,7 +6,11 @@ import blackListTokenModel from '../models/blacklistToken.model.js';
 import userModel from '../models/user.model.js';
 import { sendMail } from '../services/email.service.js';
 import AppError from '../utils/appError.js';
-import { otpVerificationTemplate } from '../utils/emailTemplates.js';
+import {
+  otpVerificationTemplate,
+  resendOtpTemplate,
+  resetPasswordTemplate,
+} from '../utils/emailTemplates.js';
 
 export const registerUser = async (req, res, next) => {
   try {
@@ -252,8 +256,8 @@ export const resendOtp = async (req, res, next) => {
 
     await sendMail(
       user.email,
-      'Verify your ScanDine Account',
-      otpVerificationTemplate(user.fullname, otp)
+      'Your New ScanDine Verification Code',
+      resendOtpTemplate(user.fullname, otp)
     );
 
     res.status(200).json({
@@ -292,7 +296,7 @@ export const forgetPassword = async (req, res, next) => {
     await sendMail(
       user.email,
       'Reset Your ScanDine Password',
-      otpVerificationTemplate(user.fullname, otp)
+      resetPasswordTemplate(user.fullname, otp)
     );
 
     res.status(200).json({

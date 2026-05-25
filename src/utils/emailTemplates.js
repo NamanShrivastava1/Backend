@@ -1,38 +1,116 @@
+// ── Registration OTP ────────────────────────────────
 const otpVerificationTemplate = (userName, otp) => {
   return `
-    <div style="font-family: Arial, sans-serif; padding: 20px;">
-      <h2 style="color:#ff6600;">Welcome to ScanDine, ${userName} 👋</h2>
-      <p>We’re excited to have you onboard! To complete your registration, please use the OTP below:</p>
-      <div style="background:#f4f4f4; padding:10px; border-radius:8px; width:fit-content; margin:20px auto;">
-        <h1 style="letter-spacing:4px; color:#333;">${otp}</h1>
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; background-color: #f9f9f9; color: #333; line-height: 1.6;">
+      <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; border: 1px solid #eee; padding: 32px;">
+
+        <h2 style="color: #ff6600; margin-bottom: 16px;">Welcome to ScanDine, ${userName} 👋</h2>
+
+        <p style="font-size: 16px; margin-bottom: 12px;">
+          We're excited to have you onboard! To complete your registration, please use the verification code below:
+        </p>
+
+        <div style="background: #fff5eb; padding: 16px 24px; border-radius: 8px; border: 2px dashed #ff6600; text-align: center; margin: 24px auto; width: fit-content;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #ff6600;">${otp}</span>
+        </div>
+
+        <p style="font-size: 14px; color: #666; text-align: center; margin-bottom: 16px;">
+          This code is valid for <b>5 minutes</b>. Do not share it with anyone.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+
+        <p style="font-size: 13px; color: #999; text-align: center;">
+          If you didn't create a ScanDine account, you can safely ignore this email.
+        </p>
+
+        <p style="font-size: 14px; color: #666; text-align: center; margin-top: 24px;">
+          🍽️ The ScanDine Team
+        </p>
       </div>
-      <p>This OTP is valid for <b>5 minutes</b>.</p>
-      <p>If you didn’t request this, you can safely ignore this email.</p>
-      <br>
-      <p style="color:#666;">🍽️ The ScanDine Team</p>
     </div>
   `;
 };
 
-// Reset Password
-const resetPasswordTemplate = (userName, link) => {
+// ── Resend OTP ──────────────────────────────────────
+const resendOtpTemplate = (userName, otp) => {
   return `
-    <div style="font-family: Arial, sans-serif; padding: 20px;">
-      <h2 style="color:#ff6600;">Hello ${userName},</h2>
-      <p>You requested to reset your password for your ScanDine account.</p>
-      <p>Click the button below to reset it:</p>
-      <a href="${link}" target="_blank"
-        style="display:inline-block; background:#ff6600; color:#fff; padding:10px 20px; text-decoration:none; border-radius:5px; margin:20px 0;">
-        Reset Password
-      </a>
-      <p>If you didn’t request this, please ignore this email.</p>
-      <br>
-      <p style="color:#666;">🍽️ The ScanDine Team</p>
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; background-color: #f9f9f9; color: #333; line-height: 1.6;">
+      <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; border: 1px solid #eee; padding: 32px;">
+
+        <h2 style="color: #ff6600; margin-bottom: 16px;">New Verification Code 🔄</h2>
+
+        <p style="font-size: 16px; margin-bottom: 12px;">
+          Hi <strong>${userName}</strong>, here is your new verification code to complete your ScanDine account setup:
+        </p>
+
+        <div style="background: #fff5eb; padding: 16px 24px; border-radius: 8px; border: 2px dashed #ff6600; text-align: center; margin: 24px auto; width: fit-content;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #ff6600;">${otp}</span>
+        </div>
+
+        <p style="font-size: 14px; color: #666; text-align: center; margin-bottom: 16px;">
+          This code is valid for <b>5 minutes</b>. Do not share it with anyone.
+        </p>
+
+        <p style="font-size: 14px; color: #888; text-align: center; margin-bottom: 8px;">
+          If your previous code expired, no worries — just use this one.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+
+        <p style="font-size: 13px; color: #999; text-align: center;">
+          If you didn't request this, you can safely ignore this email.
+        </p>
+
+        <p style="font-size: 14px; color: #666; text-align: center; margin-top: 24px;">
+          🍽️ The ScanDine Team
+        </p>
+      </div>
     </div>
   `;
 };
 
-// Cafe Created Confirmation
+// ── Reset Password OTP ──────────────────────────────
+const resetPasswordTemplate = (userName, otp) => {
+  return `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; background-color: #f9f9f9; color: #333; line-height: 1.6;">
+      <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; border: 1px solid #eee; padding: 32px;">
+
+        <h2 style="color: #ff6600; margin-bottom: 16px;">Reset Your Password 🔐</h2>
+
+        <p style="font-size: 16px; margin-bottom: 12px;">
+          Hi <strong>${userName}</strong>, we received a request to reset the password for your ScanDine account.
+        </p>
+
+        <p style="font-size: 15px; margin-bottom: 8px;">
+          Use the code below to reset your password:
+        </p>
+
+        <div style="background: #fff5eb; padding: 16px 24px; border-radius: 8px; border: 2px dashed #ff6600; text-align: center; margin: 24px auto; width: fit-content;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #ff6600;">${otp}</span>
+        </div>
+
+        <p style="font-size: 14px; color: #666; text-align: center; margin-bottom: 16px;">
+          This code is valid for <b>5 minutes</b>. Do not share it with anyone.
+        </p>
+
+        <div style="background: #fff3cd; padding: 12px 16px; border-radius: 6px; border-left: 4px solid #ffc107; margin: 20px 0;">
+          <p style="font-size: 14px; color: #856404; margin: 0;">
+            ⚠️ If you did not request a password reset, please ignore this email. Your password will remain unchanged.
+          </p>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+
+        <p style="font-size: 14px; color: #666; text-align: center; margin-top: 24px;">
+          🍽️ The ScanDine Team
+        </p>
+      </div>
+    </div>
+  `;
+};
+
+// ── Cafe Created Confirmation ───────────────────────
 const cafeCreatedTemplate = (userName, cafeName) => {
   return `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 24px; background-color: #f9f9f9; color: #333; line-height: 1.6;">
@@ -74,4 +152,9 @@ const cafeCreatedTemplate = (userName, cafeName) => {
   `;
 };
 
-export { otpVerificationTemplate, resetPasswordTemplate, cafeCreatedTemplate };
+export {
+  otpVerificationTemplate,
+  resendOtpTemplate,
+  resetPasswordTemplate,
+  cafeCreatedTemplate,
+};

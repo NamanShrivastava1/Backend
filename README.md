@@ -1,174 +1,330 @@
-# MenuQR - ScanDine
+# ScanDine — Backend API
 
-A Node.js RESTful API for managing cafes and their menus, with user authentication and authorization. Built with Express, MongoDB (Mongoose), JWT, and comprehensive error handling using AppError.
+> REST API for a QR-based digital menu platform. Cafe owners register, build their menu, and share it with customers via a generated QR code.
+
+Built with **Express 5 · MongoDB · JWT · ImageKit · NodeMailer**
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [API Reference](#api-reference)
+- [Authentication](#authentication)
+- [Error Handling](#error-handling)
+- [Logging](#logging)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
 
 ## Features
 
-- User registration, login, profile, and deletion
-- Cafe creation and management (one cafe per user)
-- Menu item CRUD for each cafe
-- JWT-based authentication with token blacklist for logout
-- QR code generation for menus
-- Public menu browsing by cafe
-- Input validation using express-validator
-- Comprehensive error handling with AppError
-- CORS and cookie support
+- **User accounts** — register, email OTP verification, login, forgot/reset password
+- **Cafe management** — create and update a cafe profile, upload cafe image
+- **Menu builder** — full CRUD for menu items with multi-image upload, availability toggle, and chef's special flag
+- **QR code generation** — generate a scannable QR code that links to the public menu
+- **Public browsing** — customers view cafe menus without logging in
+- **Security** — JWT (HTTP-only cookies), token blacklist on logout, bcrypt password hashing, Helmet, CORS, rate limiting
+
+---
+
+## Tech Stack
+
+| Layer         | Technology                       |
+| ------------- | -------------------------------- |
+| Runtime       | Node.js ≥ 20                     |
+| Framework     | Express 5                        |
+| Database      | MongoDB (Mongoose ODM)           |
+| Auth          | JWT, bcrypt                      |
+| File Storage  | ImageKit                         |
+| Email         | Nodemailer + Google OAuth2       |
+| QR Generation | qrcode                           |
+| Logging       | Winston + Morgan                 |
+| Security      | Helmet, CORS, express-rate-limit |
+| Validation    | express-validator                |
+| Dev Tools     | Nodemon, ESLint, Prettier        |
+
+---
 
 ## Project Structure
 
 ```
-ScanDine/
-├── index.js
+├── index.js                  # Server entry point
 ├── package.json
-├── README.md
-├── ERROR_HANDLING_SUMMARY.md
+├── .github/workflows/
+│   └── deploy.yml            # GitHub Actions → EC2 deploy
 └── src/
-    ├── app.js
+    ├── app.js                # Express app setup (middleware, routes, error handler)
     ├── config/
-    │   ├── config.js
-    │   └── db.js
+    │   ├── config.js         # Environment variable loader
+    │   └── db.js             # MongoDB connection
     ├── controllers/
-    │   ├── cafe.controller.js    (Cafe CRUD operations)
-    │   ├── menu.controller.js    (Menu CRUD operations)
-    │   └── user.controller.js    (User authentication & profile)
+    │   ├── user.controller.js
+    │   ├── cafe.controller.js
+    │   └── menu.controller.js
     ├── middlewares/
-    │   ├── auth.js              (User authentication)
-    │   └── cafeAuth.js          (Cafe owner authentication)
+    │   ├── auth.js           # Authenticate logged-in user
+    │   └── cafeAuth.js       # Authenticate user + verify cafe ownership
     ├── models/
-    │   ├── blacklistToken.model.js
+    │   ├── user.model.js
     │   ├── cafe.model.js
     │   ├── menu.model.js
-    │   └── user.model.js
+    │   └── blacklistToken.model.js
     ├── routes/
-    │   ├── cafe.routes.js       (Cafe & Menu routes)
-    │   ├── menu.routes.js       (Standalone menu routes - optional)
-    │   └── user.routes.js
+    │   ├── user.routes.js
+    │   ├── cafe.routes.js
+    │   └── menu.routes.js
     ├── services/
-    │   └── email.service.js     (Email sending service)
+    │   ├── email.service.js  # Send emails via Google OAuth2
+    │   └── storage.service.js# ImageKit upload/delete helpers
     ├── utils/
-    │   ├── appError.js          (Custom error class)
-    │   ├── categoryImages.js
-    │   └── emailTemplates.js
-    └── validators/
-        ├── auth.validator.js
-        ├── cafe.validator.js
-        └── menu.validator.js
+    │   ├── appError.js       # Custom error class
+    │   ├── categoryImages.js # Default category image map
+    │   ├── emailTemplates.js # HTML email templates
+    │   └── multer.js         # File upload config (memory storage)
+    ├── validators/
+    │   ├── auth.validator.js
+    │   ├── cafe.validator.js
+    │   └── menu.validator.js
+    └── loggers/
+        ├── winston.logger.js # App logger (file + console)
+        └── morgan.logger.js  # HTTP request logger
 ```
+
+---
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (v14+ recommended)
-- MongoDB instance (local or cloud)
+- **Node.js** ≥ 20
+- **MongoDB** instance (local or Atlas)
+- **ImageKit** account (for image uploads)
+- **Google Cloud** project with OAuth2 credentials (for sending emails)
 
-### Installation
+### Install & Run
 
-1. Clone the repository:
-   ```sh
-   git clone <repo-url>
-   cd ScanDine
-   ```
-2. Install dependencies:
-   ```sh
-   npm install
-   ```
-3. Create a `.env` file in the root directory with the following variables:
-   ```env
-   MONGODB_URI=<your-mongodb-uri>
-   JWT_SECRET=<your-jwt-secret>
-   PORT=3000
-   NODE_ENV=development
-   EMAIL_USER=<your-email>
-   GOOGLE_CLIENT_ID=<google-client-id>
-   GOOGLE_CLIENT_SECRET=<google-client-secret>
-   REFRESH_TOKEN=<refresh-token>
-   ```
-4. Start the server:
-   ```sh
-   npm run dev
-   ```
+```bash
+# 1. Clone the repo
+git clone https://github.com/NamanShrivastava1/Backend.git
+cd Backend
 
-## API Endpoints
+# 2. Install dependencies
+npm install
 
-### User Routes (`/api/users`)
+# 3. Create a .env file (see section below)
+cp .env.example .env
 
-- `POST /register` — Register a new user
-- `POST /login` — Login and receive JWT token (set as cookie)
-- `POST /verify-otp` — Verify OTP sent to email
-- `GET /dashboard/profile` — Get user profile (auth required)
-- `GET /me` — Get current authenticated user
-- `GET /logout` — Logout (blacklists token)
-- `DELETE /delete` — Delete user account
+# 4. Start in development mode
+npm run dev
+```
 
-### Cafe Routes (`/api/dashboard`)
+The server starts at `http://localhost:3000` (or the port set in `.env`).
 
-- `POST /cafeinfo` — Create cafe (auth required)
-- `GET /showCafe` — Get cafe info (auth required)
-- `GET /generate-qr` — Generate QR code for menu (auth required)
-- `GET /public-cafes` — Get all public cafes (no auth required)
+### Available Scripts
 
-### Menu Routes (`/api/dashboard`)
+| Script             | Description                      |
+| ------------------ | -------------------------------- |
+| `npm run dev`      | Start with Nodemon (development) |
+| `npm start`        | Start in production mode         |
+| `npm run lint`     | Run ESLint                       |
+| `npm run lint:fix` | Auto-fix lint issues             |
+| `npm run format`   | Format code with Prettier        |
 
-- `POST /menu` — Add menu item (cafe auth required)
-- `GET /my-menu` — Get my cafe's menu items (cafe auth required)
-- `GET /menu/:cafeId` — Get all menu items for a cafe
-- `PUT /menu/:menuItemId` — Update menu item (cafe auth required)
-- `DELETE /menu/:menuItemId` — Delete menu item (cafe auth required)
-- `PUT /menu/:id/toggle-availability` — Toggle menu item availability (cafe auth required)
-- `GET /public-menu/:cafeId` — Get public menu by cafe (no auth required)
-
-## Authentication
-
-### Two-Factor Authentication
-
-- Uses JWT for primary authentication, stored in HTTP-only cookies
-- Email-based OTP verification for account confirmation
-- Token version tracking for session management
-- Blacklist mechanism for secure logout
-
-### Middleware
-
-- **authenticateUser**: Verifies user is logged in
-- **authenticateCafe**: Verifies user is logged in AND owns a cafe
-
-## Models
-
-- **User**: fullname, email, mobile, password (hashed), isVerified, otp, otpExpiry, jwtVersion
-- **Cafe**: cafename, phoneNo, address, description, user (ref), qrCode
-- **Menu**: dishName, category, description, halfPrice, fullPrice, price, image, isChefSpecial, isAvailable, cafe (ref)
-- **BlackListToken**: token, createdAt (auto-expires after 24h)
-
-## Error Handling
-
-All errors are handled using the AppError class with proper HTTP status codes:
-
-- **400** - Bad Request (validation or input errors)
-- **401** - Unauthorized (authentication failures)
-- **403** - Forbidden (not authorized for resource)
-- **404** - Not Found (resource doesn't exist)
-- **500** - Internal Server Error (unexpected errors)
-
-See `ERROR_HANDLING_SUMMARY.md` for detailed error handling documentation.
-
-## Validation
-
-- Uses `express-validator` for request validation
-- Passwords are hashed with bcrypt
-- Email validation for unique email addresses
-- Mobile number validation for unique phone numbers
+---
 
 ## Environment Variables
 
-- `MONGODB_URI`: MongoDB connection string
-- `JWT_SECRET`: Secret for JWT signing
-- `PORT`: Server port (default: 3000)
-- `NODE_ENV`: Environment mode (development/production)
-- `EMAIL_USER`: Gmail account for sending emails
-- `GOOGLE_CLIENT_ID`: Google OAuth client ID
-- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
-- `REFRESH_TOKEN`: Google OAuth refresh token
+Create a `.env` file in the project root:
+
+```env
+# ── Required ─────────────────────────────────────────
+NODE_ENV=development
+PORT=3000
+MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/<db>
+JWT_SECRET=<random-secret-string>
+
+# ── Email (Google OAuth2) ────────────────────────────
+EMAIL_USER=your-email@gmail.com
+GOOGLE_CLIENT_ID=<google-client-id>
+GOOGLE_CLIENT_SECRET=<google-client-secret>
+REFRESH_TOKEN=<google-oauth-refresh-token>
+
+# ── Image Uploads ────────────────────────────────────
+IMAGEKIT_PRIVATE_KEY=<imagekit-private-key>
+```
+
+> **Note:** `MONGO_URI` and `JWT_SECRET` are **required**. The server will not start without them. All other variables are optional in development but will log warnings in production if missing.
+
+---
+
+## API Reference
+
+Base URL: `/api/v1`
+
+### Health Check
+
+| Method | Endpoint  | Description                |
+| ------ | --------- | -------------------------- |
+| GET    | `/health` | Returns `{ status: "OK" }` |
+
+---
+
+### Users — `/api/v1/users`
+
+| Method | Endpoint             | Auth    | Description                            |
+| ------ | -------------------- | ------- | -------------------------------------- |
+| POST   | `/register`          | Public  | Register a new user                    |
+| POST   | `/login`             | Public  | Login and receive JWT cookie           |
+| POST   | `/verify-otp`        | Public  | Verify email OTP                       |
+| POST   | `/resend-otp`        | Public  | Resend verification OTP                |
+| POST   | `/forget-password`   | Public  | Request password reset OTP             |
+| POST   | `/reset-password`    | Private | Reset password with OTP                |
+| GET    | `/me`                | Private | Get current user                       |
+| GET    | `/dashboard/profile` | Private | Get profile for dashboard              |
+| POST   | `/logout`            | Private | Logout (blacklists token)              |
+| DELETE | `/delete`            | Private | Delete account + all owned cafes/menus |
+
+---
+
+### Cafes — `/api/v1/cafe`
+
+| Method | Endpoint        | Auth       | Description                      |
+| ------ | --------------- | ---------- | -------------------------------- |
+| POST   | `/createCafe`   | Private    | Create a cafe                    |
+| GET    | `/showCafe`     | Private    | Get your cafe details            |
+| PUT    | `/updateCafe`   | Cafe Owner | Update cafe details + image      |
+| POST   | `/upload-image` | Cafe Owner | Upload cafe logo/image           |
+| GET    | `/generate-qr`  | Cafe Owner | Generate QR code for public menu |
+| GET    | `/public-cafes` | Public     | List all cafes                   |
+
+---
+
+### Menu — `/api/v1/menu`
+
+| Method | Endpoint                     | Auth       | Description                           |
+| ------ | ---------------------------- | ---------- | ------------------------------------- |
+| POST   | `/`                          | Cafe Owner | Add a menu item                       |
+| GET    | `/my-menu`                   | Cafe Owner | Get all items for your cafe           |
+| PUT    | `/:menuItemId`               | Cafe Owner | Update a menu item                    |
+| DELETE | `/:menuItemId`               | Cafe Owner | Delete a menu item                    |
+| POST   | `/upload-images/:menuItemId` | Cafe Owner | Upload images for a menu item (max 5) |
+| PUT    | `/availability/:id`          | Cafe Owner | Toggle item availability              |
+| GET    | `/:cafeId`                   | Public     | Get menu items by cafe                |
+| GET    | `/public/:cafeId`            | Public     | Get public menu for a cafe            |
+
+---
+
+## Authentication
+
+The API uses **JWT tokens** stored in HTTP-only cookies.
+
+### Flow
+
+1. **Register** → an OTP is sent to the user's email.
+2. **Verify OTP** → account is activated.
+3. **Login** → a signed JWT is set as an `httpOnly` cookie (valid for 7 days).
+4. **Authenticated requests** → the cookie (or `Authorization: Bearer <token>` header) is verified on every private route.
+5. **Logout** → the token is added to a blacklist collection (auto-expires after 24 hours).
+
+### Middleware
+
+| Middleware         | Description                                                   |
+| ------------------ | ------------------------------------------------------------- |
+| `authenticateUser` | Verifies JWT, checks blacklist, validates `jwtVersion` match  |
+| `authenticateCafe` | Runs `authenticateUser` logic + verifies the user owns a cafe |
+
+### Password Reset
+
+1. `POST /forget-password` with email → sends a reset OTP.
+2. `POST /reset-password` with email, OTP, and new password → updates the password and increments `jwtVersion` (invalidates all existing sessions).
+
+---
+
+## Error Handling
+
+All errors follow a consistent JSON format:
+
+```json
+{
+  "status": "fail",
+  "message": "Human-readable error message"
+}
+```
+
+In **development**, responses also include a `stack` trace.
+
+### Status Codes
+
+| Code | Meaning                                      |
+| ---- | -------------------------------------------- |
+| 400  | Validation error, duplicate field, bad input |
+| 401  | Missing/invalid/expired token                |
+| 403  | Forbidden (e.g., CORS, no cafe ownership)    |
+| 404  | Route or resource not found                  |
+| 429  | Rate limit exceeded                          |
+| 500  | Internal server error                        |
+
+### Rate Limiting
+
+| Scope                | Window | Max Requests |
+| -------------------- | ------ | ------------ |
+| All `/api/v1` routes | 15 min | 100          |
+| Login endpoint       | 5 min  | 5            |
+
+---
+
+## Logging
+
+- **Winston** — app-level logger with levels `error`, `warn`, `info`, `http`, `debug`.
+  - Development: colorized console output.
+  - Production: JSON logs written to `logs/error.log` and `logs/combined.log`.
+- **Morgan** — HTTP request logging piped through Winston's `http` level.
+
+---
+
+## Deployment
+
+The project includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that deploys to an **EC2 instance** on every push to `master`.
+
+### What the workflow does
+
+1. Checks out the latest code.
+2. SSHs into the EC2 instance.
+3. Pulls the latest changes, installs production dependencies, and restarts the process via **PM2**.
+
+### Required GitHub Secrets
+
+| Secret        | Description                    |
+| ------------- | ------------------------------ |
+| `EC2_HOST`    | Public IP or hostname of EC2   |
+| `EC2_USER`    | SSH username (e.g., `ubuntu`)  |
+| `EC2_SSH_KEY` | Private SSH key for the server |
+
+### Process Management
+
+The app runs under **PM2** in production with graceful shutdown support (handles `SIGTERM`).
+
+---
+
+## Contributing
+
+1. Fork the repository.
+2. Create a feature branch: `git checkout -b feature/your-feature`.
+3. Commit your changes: `git commit -m "feat: add your feature"`.
+4. Push to the branch: `git push origin feature/your-feature`.
+5. Open a pull request.
+
+Please run `npm run lint` and `npm run format` before submitting.
+
+---
 
 ## License
 
-MIT
+This project is licensed under the [ISC License](https://opensource.org/licenses/ISC).
