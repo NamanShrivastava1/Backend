@@ -74,6 +74,6 @@ router.post('/forget-password', userController.forgetPassword);
  * @description Reset password
  * @access      Private (Authenticated User)
  */
-router.post('/reset-password', middleware.authenticateUser, userController.resetPassword);
+router.post('/reset-password', userController.resetPassword);
 
 export default router;
