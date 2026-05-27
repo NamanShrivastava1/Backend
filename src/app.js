@@ -31,20 +31,48 @@ app.use(
 );
 
 // Rate Limiters
-const apiLimiter = rateLimit({
+// Public APIs (relaxed)
+const publicLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: { error: 'Too many requests, please try again later.' },
+  max: 1000,
+  message: { error: 'Too many requests. Please slow down.' },
 });
 
+// Auth APIs (strict)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Too many authentication attempts.' },
+});
+
+// Login APIs (very strict)
 const loginLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 5,
-  message: { error: 'Too many login attempts, please try again later.' },
+  message: { error: 'Too many login attempts.' },
 });
 
-app.use('/api/v1', apiLimiter);
+// OTP APIs (extremely strict)
+const otpLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 3,
+  message: { error: 'Too many OTP requests.' },
+});
+
+// Public routes
+app.use('/api/v1/cafe/public-cafes', publicLimiter);
+app.use('/api/v1/menu/public', publicLimiter);
+
+// Auth routes
+app.use('/api/v1/users/register', authLimiter);
+app.use('/api/v1/users/forget-password', authLimiter);
+
+// Login route
 app.use('/api/v1/users/login', loginLimiter);
+
+// OTP routes
+app.use('/api/v1/users/verify-otp', otpLimiter);
+app.use('/api/v1/users/resend-otp', otpLimiter);
 
 // Routes
 app.use('/api/v1/users', userRoutes);
