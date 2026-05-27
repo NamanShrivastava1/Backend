@@ -12,6 +12,16 @@ import {
   resetPasswordTemplate,
 } from '../utils/emailTemplates.js';
 
+export const sanitizeUser = (user) => {
+  return {
+    _id: user._id,
+    fullname: user.fullname,
+    email: user.email,
+    mobile: user.mobile,
+    isVerified: user.isVerified,
+  };
+};
+
 export const registerUser = async (req, res, next) => {
   try {
     const error = validationResult(req);
@@ -49,10 +59,12 @@ export const registerUser = async (req, res, next) => {
 
     await sendMail(email, 'Verify your ScanDine Account', otpVerificationTemplate(fullname, otp));
 
+    const safeUser = sanitizeUser(user);
+
     res.status(201).json({
       success: true,
       message: 'User registered successfully. Please verify your email using the OTP sent.',
-      user,
+      safeUser,
       userId: user._id, // send userId for OTP verification
     });
   } catch (error) {
@@ -100,7 +112,7 @@ export const loginUser = async (req, res, next) => {
 
     res.status(200).json({
       message: 'Login successful',
-      token,
+      // token,
     });
   } catch (error) {
     next(error);
@@ -114,9 +126,11 @@ export const getUserProfile = async (req, res, next) => {
     if (!user) {
       throw new AppError('User not found', 404);
     }
+
+    const safeUser = sanitizeUser(user);
     res.status(200).json({
       message: 'User profile retrieved successfully',
-      user,
+      safeUser,
     });
   } catch (error) {
     next(error);
@@ -133,7 +147,9 @@ export const getCurrentUser = (req, res, next) => {
       throw new AppError('Please verify your email to access this resource', 403);
     }
 
-    res.status(200).json({ user });
+    const safeUser = sanitizeUser(user);
+
+    res.status(200).json({ safeUser });
   } catch (error) {
     next(error);
   }
