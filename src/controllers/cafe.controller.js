@@ -91,27 +91,26 @@ export const generateQRCode = async (req, res, next) => {
 // Public cafe routes
 export const publicCafeController = async (req, res, next) => {
   try {
-    // Fetch from MongoDB
+    // Fetch all cafes
     const cafes = await cafeModel.find();
 
-    // Add `hasChefSpecial` flag
-    const cafesWithSpecialFlag = await Promise.all(
-      cafes.map(async (cafe) => {
-        const hasChefSpecial = await menuModel.exists({
-          cafe: cafe._id,
-          isChefSpecial: true,
-        });
+    // Get all cafe IDs that have chef special items
+    const chefSpecialCafeIds = await menuModel.distinct('cafe', {
+      isChefSpecial: true,
+    });
 
-        return {
-          ...cafe.toObject(),
-          hasChefSpecial: Boolean(hasChefSpecial),
-        };
-      })
-    );
+    // Convert ObjectIds to strings for easy comparison
+    const chefSpecialSet = new Set(chefSpecialCafeIds.map((id) => id.toString()));
 
-    const response = { cafes: cafesWithSpecialFlag };
+    // Add hasChefSpecial flag
+    const cafesWithSpecialFlag = cafes.map((cafe) => ({
+      ...cafe.toObject(),
+      hasChefSpecial: chefSpecialSet.has(cafe._id.toString()),
+    }));
 
-    return res.status(200).json(response);
+    res.status(200).json({
+      cafes: cafesWithSpecialFlag,
+    });
   } catch (error) {
     next(error);
   }
