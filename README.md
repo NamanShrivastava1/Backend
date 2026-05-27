@@ -112,7 +112,7 @@ Built with **Express 5 · MongoDB · JWT · ImageKit · NodeMailer**
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/NamanShrivastava1/Backend.git
+git clone https://github.com/NamanShrivastava1/ScanDine.git
 cd Backend
 
 # 2. Install dependencies
