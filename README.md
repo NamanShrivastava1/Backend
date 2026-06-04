@@ -1,4 +1,4 @@
-# ScanDine — Backend API
+# ScanDine
 
 > REST API for a QR-based digital menu platform. Cafe owners register, build their menu, and share it with customers via a generated QR code.
 
